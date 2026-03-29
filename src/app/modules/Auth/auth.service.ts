@@ -197,10 +197,11 @@ const forgotPassword = async (payload: { email: string }) => {
   console.log(payload.email);
 
   try {
-    const html = forgotPasswordTemplate(otp);
+    // const html = forgotPasswordTemplate(otp);
+    const html = `Here is your OTP code: ${otp}. It will expire in 5 minutes.`;
 
     if (userData.email) {
-      await emailSender(userData.email, html, "Forgot Password OTP");
+      await emailSender(userData.email, html, "Regwheat Password OTP");
     }
   } catch (error) {
     console.error(`Failed to send OTP email:`, error);
