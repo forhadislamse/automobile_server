@@ -1,7 +1,7 @@
 module.exports = {
     apps: [
         {
-            name: 'andcates_server',
+            name: 'regwheat_server',
             script: './dist/server.js',
             args: 'start',
             env: {
