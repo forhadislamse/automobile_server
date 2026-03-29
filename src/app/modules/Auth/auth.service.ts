@@ -192,7 +192,7 @@ const forgotPassword = async (payload: { email: string }) => {
   });
 
   const otp = generateOtp(6);
-  const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
+  const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
   console.log(payload.email);
 
