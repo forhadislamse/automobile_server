@@ -1,0 +1,25 @@
+export const resendOTPTemplate = (otp: number) => `
+<div style="font-family: 'Segoe UI', sans-serif; background: #f3f4f6; padding: 40px;">
+  <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 12px; padding: 30px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+    <h1 style="color: #1e3a8a; font-size: 28px;">Resend OTP</h1>
+    <p style="color: #374151; font-size: 16px; margin: 10px 0;">
+      Here is your new OTP code to complete the process.
+    </p>
+    <div style="font-size: 36px; font-weight: bold; color: #ef4444; margin: 20px 0;">
+      ${otp}
+    </div>
+    <p style="color: #6b7280; font-size: 14px;">
+      This OTP will expire in <strong>5 minutes</strong>.
+    </p>
+    <p style="color: #9ca3af; font-size: 12px; margin-bottom: 20px;">
+      If you did not request this, please ignore this email. For assistance, contact support.
+    </p>
+    <hr style="margin: 30px 0; border-color: #e5e7eb;">
+    <p style="color: #9ca3af; font-size: 12px;">
+      Best Regards,<br/>
+      <span style="font-weight: bold; color: #1e3a8a;">knastachia@team.com</span><br/>
+      <a href="mailto:support@booksy.buzz.com" style="color: #1e3a8a; text-decoration: none; font-weight: bold;">Contact Support</a>
+    </p>
+  </div>
+</div>
+`;
