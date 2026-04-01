@@ -308,7 +308,7 @@ const verifyEmailOtp = async (payload: {
     throw new ApiError(httpStatus.BAD_REQUEST, "Invalid or expired OTP");
   }
 
-  // ✅ UPDATE USER: Mark email as verified + Clear OTP fields
+  // UPDATE USER: Mark email as verified + Clear OTP fields
   await prisma.user.update({
     where: { email: payload.email },
     data: {
@@ -352,28 +352,6 @@ const resetPassword = async (payload: { password: string; email: string }) => {
     },
   });
 
-   // Notification payload
-  // const notificationPayload = {
-  //   title: "Password Reset Successful",
-  //   body: "Your password has been reset successfully. You can now login with your new password.",
-  //   type: NotificationType.PASSWORD_RESET,
-  //   data: JSON.stringify({ userId: user.id }),
-  //   targetId: user.id,
-  //   slug: "password-reset",
-  //   fcmToken: user.fcmToken || "",
-  // };
-
-  // try {
-  //   // Send push notification if token exists
-  //   if (user.fcmToken) {
-  //     await notificationService.sendNotification(user.fcmToken, notificationPayload, user.id);
-  //   }
-
-  //   // Save notification in DB
-  //   await notificationService.saveNotification(notificationPayload, user.id);
-  // } catch (error) {
-  //   console.error("Failed to send or save password reset notification:", error);
-  // }
 
   return { message: "Password reset successfully" };
 };
