@@ -8,11 +8,6 @@ import httpStatus from "http-status";
 import { generateOtp } from "../../../helpars/generateOtp";
 import emailSender from "../../../shared/emailSender";
 import prisma from "../../../shared/prisma";
-import { registrationOtpTemplate } from "../../../helpars/template/registrationOtpTemplate";
-import { forgotPasswordTemplate } from "../../../helpars/template/forgotPasswordTemplate";
-import { NotificationType, UserRole } from "@prisma/client";
-import { fileUploader } from "../../../helpars/fileUploader";
-// import { notificationService } from "../Notification/Notification.service";
 
 
 

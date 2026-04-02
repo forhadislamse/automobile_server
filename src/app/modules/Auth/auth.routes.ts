@@ -2,8 +2,6 @@ import express from "express";
 import { AuthController } from "./auth.controller";
 import auth from "../../middlewares/auth";
 import { checkBlockedStatus } from "../../middlewares/checkBlock";
-import multer from "multer";
-import { fileUploader } from "../../../helpars/fileUploader";
 
 const router = express.Router();
 

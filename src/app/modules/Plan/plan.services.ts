@@ -1,8 +1,6 @@
-import { PrismaClient } from '@prisma/client';
-import ApiError from '../../../errors/ApiErrors';
 import { ISubscriptionPlan } from './plan.interface';
-
-const prisma = new PrismaClient();
+import prisma from '../../../shared/prisma';
+import ApiError from '../../../errors/ApiErrors';
 
 const createPlan = async (payload: ISubscriptionPlan) => {
     const existing = await prisma.subscriptionPlan.findUnique({
