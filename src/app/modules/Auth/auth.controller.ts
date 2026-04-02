@@ -100,10 +100,10 @@ const verifyForgotPasswordOtp = catchAsync(
     });
   }
 );
-//verify forgot password otp
+//verify email otp
 const verifyEmailOtp = catchAsync(
   async (req: Request, res: Response) => {
-    const result = await AuthServices.verifyForgotPasswordOtp(req.body);
+    const result = await AuthServices.verifyEmailOtp(req.body);
 
     sendResponse(res, {
       statusCode: httpStatus.OK,

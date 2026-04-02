@@ -37,6 +37,9 @@ router.post("/resend-otp", AuthController.resendOtp);
 //verify-otp
 router.post("/verify-otp", AuthController.verifyForgotPasswordOtp);
 
+//verify email otp
+router.post("/verify-email-otp", AuthController.verifyEmailOtp);
+
 //delete user
 router.delete("/delete-user", auth(), AuthController.deleteUser);
 

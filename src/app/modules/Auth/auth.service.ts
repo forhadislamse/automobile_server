@@ -17,6 +17,8 @@ const createUserIntoDb = async (payload: any) => {
     phone,
     password,
     fullName,
+    shopName,
+    shopAddress,
     role,
     gender,
     fcmToken
@@ -43,6 +45,8 @@ const createUserIntoDb = async (payload: any) => {
       phone,
       password: hashedPassword,
       fullName,
+      shopName,
+      shopAddress,
       role,
       gender: gender || "Male",
       fcmToken,
@@ -185,11 +189,15 @@ const changePassword = async (
 // forgot password
 const forgotPassword = async (payload: { email: string }) => {
   // Fetch user data or throw if not found
-  const userData = await prisma.user.findFirstOrThrow({
+  const userData = await prisma.user.findUnique({
     where: {
       email: payload.email,
     },
   });
+
+  if (!userData) {
+    throw new ApiError(httpStatus.NOT_FOUND, "User not found with this email!");
+  }
 
   const otp = generateOtp(6);
   const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
@@ -281,6 +289,9 @@ const verifyForgotPasswordOtp = async (payload: {
 
   return { message: "OTP verification successful" };
 };
+
+
+// verify email otp
 const verifyEmailOtp = async (payload: {
   email: string;
   otp: number;
@@ -397,6 +408,7 @@ const deleteUser = async (userToken: string) => {
 };
 
 export const AuthServices = {
+  createUserIntoDb,
   loginUser,
   changePassword,
   forgotPassword,
@@ -405,5 +417,4 @@ export const AuthServices = {
   verifyForgotPasswordOtp,
   verifyEmailOtp,
   deleteUser,
-  createUserIntoDb,
 };
