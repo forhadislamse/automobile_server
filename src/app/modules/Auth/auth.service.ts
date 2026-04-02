@@ -27,6 +27,11 @@ const createUserIntoDb = async (payload: any) => {
   if (!phone) throw new ApiError(400, "Phone is required");
   if (!password) throw new ApiError(400, "Password is required");
 
+  // Restrict Technician role from public registration
+  if (role === "TECHNICIAN") {
+    throw new ApiError(httpStatus.FORBIDDEN, "Technicians can only join via invitation from a Shop Owner.");
+  }
+
   const existingEmail = await prisma.user.findUnique({ where: { email } });
   if (existingEmail) throw new ApiError(400, "Email already exists");
 
