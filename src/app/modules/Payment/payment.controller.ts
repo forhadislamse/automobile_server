@@ -47,8 +47,27 @@ const confirmPayment = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const startFreeTrial = catchAsync(async (req: Request, res: Response) => {
+    const userId = req.user.id;
+    const { planId } = req.body;
+
+    if (!planId) {
+        throw new ApiError(httpStatus.BAD_REQUEST, 'planId is required');
+    }
+
+    const result = await PaymentServices.startFreeTrial(userId, planId);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: '14-day free trial started successfully',
+        data: result,
+    });
+});
+
 export const PaymentController = {
     createSubscriptionIntent,
     handleWebhook,
-    confirmPayment
+    confirmPayment,
+    startFreeTrial
 };

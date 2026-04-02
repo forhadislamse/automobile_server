@@ -39,8 +39,9 @@ model User {
   planId                String?   @db.ObjectId
   plan                  SubscriptionPlan? @relation(fields: [planId], references: [id])
   subscriptionExpiresAt DateTime?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  isTrialUsed           Boolean           @default(false)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
 
   Notification Notification[]
   Payment      Payment[]
@@ -108,8 +109,10 @@ model SubscriptionPlan {
   name      String   @unique // e.g. "Free Plan", "Monthly Plan", "Yearly Plan"
   price     Float    // e.g. 0, 899, 2499
   currency  String   @default("USD")
-  duration  String?  // e.g. "monthly", "yearly"
-  features  String[] // Array of strings e.g. ["Full access...", "Powerful keyword search..."]
+  duration        String? // e.g. "monthly", "yearly"
+  technicianLimit Int     @default(0) // e.g. 3, 5
+  hasTrial        Boolean @default(false) // Only for Professional Shop Plan
+  features        String[] // Array of strings e.g. ["Full access...", "Powerful keyword search..."]
   isPopular Boolean  @default(false)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())

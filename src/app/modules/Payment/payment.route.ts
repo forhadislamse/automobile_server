@@ -5,6 +5,7 @@ import auth from '../../middlewares/auth';
 const router = express.Router();
 
 router.post('/create-subscription-intent', auth(), PaymentController.createSubscriptionIntent);
+router.post('/start-free-trial', auth(), PaymentController.startFreeTrial);
 router.post('/confirm-payment/:id', auth(), PaymentController.confirmPayment);
 router.post('/webhook', express.raw({ type: 'application/json' }), PaymentController.handleWebhook);
 

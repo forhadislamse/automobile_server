@@ -265,8 +265,68 @@ const confirmPayment = async (paymentId: string, paymentIntentId: string) => {
     return updatedPayment;
 };
 
+const startFreeTrial = async (userId: string, planId: string) => {
+    // 1. Fetch User
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+    });
+
+    if (!user) {
+        throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+    }
+
+    // 2. Check if user already used a trial
+    if (user.isTrialUsed) {
+        throw new ApiError(httpStatus.BAD_REQUEST, 'You have already used your free trial.');
+    }
+
+    // 3. Fetch Subscription Plan
+    const plan = await prisma.subscriptionPlan.findUnique({
+        where: { id: planId }
+    });
+
+    if (!plan) {
+        throw new ApiError(httpStatus.NOT_FOUND, 'Subscription plan not found');
+    }
+
+    // 4. Verify if plan allows trial
+    if (!plan.hasTrial) {
+        throw new ApiError(httpStatus.BAD_REQUEST, 'This plan does not offer a free trial.');
+    }
+
+    // 5. Calculate expiry (14 days)
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 14);
+
+    // 6. Update User
+    const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: {
+            isSubscribed: true,
+            isTrialUsed: true,
+            planId: planId,
+            subscriptionExpiresAt: expiresAt,
+        },
+    });
+
+    // 7. Create a $0 Payment record for history
+    await prisma.payment.create({
+        data: {
+            userId: user.id,
+            planId: plan.id,
+            amount: 0,
+            status: 'PAID',
+            transactionId: `TRIAL_${Math.random().toString(36).substring(7).toUpperCase()}`,
+            invoiceId: 'FREE_TRIAL'
+        }
+    });
+
+    return updatedUser;
+};
+
 export const PaymentServices = {
     createSubscriptionIntent,
     handleWebhook,
-    confirmPayment
+    confirmPayment,
+    startFreeTrial
 };
