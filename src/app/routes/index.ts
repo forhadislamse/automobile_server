@@ -6,6 +6,7 @@ import { PaymentRoutes } from "../modules/Payment/payment.route";
 import { PlanRoutes } from "../modules/Plan/plan.route";
 
 import { fileUploadRoutes } from "../modules/fileUpload/fileUpload.routes";
+import { TechnicianRoutes } from "../modules/technician/technician.routes";
 // import admin from "../../shared/firebase";
 
 // import { NotificationRoutes } from "../modules/Notification/Notification.routes";
@@ -44,6 +45,10 @@ const moduleRoutes = [
   {
     path: "/plans",
     route: PlanRoutes,
+  },
+  {
+    path: "/technicians",
+    route: TechnicianRoutes,
   },
   // {
   //   path: "/admin",

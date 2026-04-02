@@ -43,6 +43,10 @@ model User {
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
 
+  adminId     String? @db.ObjectId
+  admin       User?   @relation("ShopTechnicians", fields: [adminId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  technicians User[]  @relation("ShopTechnicians")
+
   Notification Notification[]
   Payment      Payment[]
 
@@ -83,6 +87,7 @@ enum NotificationType {
 enum UserRole {
   USER
   ADMIN
+  TECHNICIAN
 }
 
 enum AdminReq {
