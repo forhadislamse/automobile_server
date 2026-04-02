@@ -6,8 +6,11 @@ const plans = [
   {
     name: 'Basic Shop Plan',
     price: 79,
+    duration: 'monthly',
     technicianLimit: 3,
     hasTrial: false,
+    isPopular: false,
+    isActive: true,
     features: [
       'Shop Foreman AI',
       'Mechanical Diagnostics AI',
@@ -18,8 +21,11 @@ const plans = [
   {
     name: 'Professional Shop Plan',
     price: 129,
+    duration: 'monthly',
     technicianLimit: 5,
     hasTrial: true,
+    isPopular: true,
+    isActive: true,
     features: [
       'Shop Foreman AI',
       'Mechanical Diagnostics AI',
@@ -32,8 +38,11 @@ const plans = [
   {
     name: 'European Specialist Plan',
     price: 179,
+    duration: 'monthly',
     technicianLimit: 5,
     hasTrial: false,
+    isPopular: false,
+    isActive: true,
     features: [
       'Shop Foreman AI',
       'Mechanical Diagnostics AI',

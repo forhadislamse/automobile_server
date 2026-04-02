@@ -103,7 +103,7 @@ enum Gender {
   Other
 }
 
-// সাবস্ক্রিপশন প্ল্যান মডেল
+// Subscription Plan Model
 model SubscriptionPlan {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   name      String   @unique // e.g. "Free Plan", "Monthly Plan", "Yearly Plan"
@@ -112,7 +112,7 @@ model SubscriptionPlan {
   duration        String? // e.g. "monthly", "yearly"
   technicianLimit Int     @default(0) // e.g. 3, 5
   hasTrial        Boolean @default(false) // Only for Professional Shop Plan
-  features        String[] // Array of strings e.g. ["Full access...", "Powerful keyword search..."]
+  features        String[] // Array of strings
   isPopular Boolean  @default(false)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
