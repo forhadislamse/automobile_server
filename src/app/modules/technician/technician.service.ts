@@ -28,7 +28,7 @@ const addTechnician = async (ownerId: string, payload: TAddTechnician) => {
 
   // 2. Check Technician Limit
   const currentTechnicianCount = await prisma.user.count({
-    where: { adminId: ownerId, role: UserRole.TECHNICIAN, isDeleted: false },
+    where: { ownerId: ownerId, role: UserRole.TECHNICIAN, isDeleted: false },
   });
 
   if (currentTechnicianCount >= owner.plan.technicianLimit) {
@@ -54,7 +54,7 @@ const addTechnician = async (ownerId: string, payload: TAddTechnician) => {
       fullName,
       password: hashedPassword,
       role: UserRole.TECHNICIAN,
-      adminId: ownerId,
+      ownerId: ownerId,
       status: 'ACTIVE',
       isVerifyEmail: true, // Auto-verify as it's an invitation
     },
@@ -70,7 +70,7 @@ const addTechnician = async (ownerId: string, payload: TAddTechnician) => {
 
 const getShopTechnicians = async (ownerId: string) => {
   const technicians = await prisma.user.findMany({
-    where: { adminId: ownerId, isDeleted: false },
+    where: { ownerId: ownerId, isDeleted: false },
     select: {
       id: true,
       fullName: true,
@@ -94,7 +94,7 @@ const getTechnicianLimitInfo = async (ownerId: string) => {
   }
 
   const currentCount = await prisma.user.count({
-    where: { adminId: ownerId, isDeleted: false },
+    where: { ownerId: ownerId, isDeleted: false },
   });
 
   return {

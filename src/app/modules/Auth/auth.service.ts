@@ -378,6 +378,11 @@ const deleteUser = async (userToken: string) => {
     );
   }
 
+  // Manually delete associated technicians because Prisma self-relations don't support Cascade in MongoDB
+  await prisma.user.deleteMany({
+    where: { ownerId: user.id },
+  });
+
   const deletedUser = await prisma.user.delete({
     where: { id: user.id },
     select: {
