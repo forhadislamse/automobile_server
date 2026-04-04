@@ -30,7 +30,7 @@ const getPlanById = async (id: string) => {
     const plan = await prisma.subscriptionPlan.findUnique({
         where: { id }
     });
-    
+
     if (!plan) throw new ApiError(404, 'Plan not found');
     return plan;
 };

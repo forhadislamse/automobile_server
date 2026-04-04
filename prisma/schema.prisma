@@ -13,7 +13,7 @@ model User {
   password      String?
   // age           Int?       @default(0)
   fullName      String?    @default("")
-  shopAddress      String?    @default("")
+  shopAddress   String?    @default("")
   shopName      String?    @default("")
   profileImage  String?    @default("")
   phone         String?    @default("")
@@ -31,12 +31,12 @@ model User {
   isUserOnline     Boolean @default(false)
   fcmToken         String? @default("")
 
-  accountLink           String?   @default("")
-  stripeAccountUrl      String?   @default("")
-  stripeAccountId       String?   @default("")
-  stripeCustomerId      String?   @default("")
-  isSubscribed          Boolean   @default(false)
-  planId                String?   @db.ObjectId
+  accountLink           String?           @default("")
+  stripeAccountUrl      String?           @default("")
+  stripeAccountId       String?           @default("")
+  stripeCustomerId      String?           @default("")
+  isSubscribed          Boolean           @default(false)
+  planId                String?           @db.ObjectId
   plan                  SubscriptionPlan? @relation(fields: [planId], references: [id])
   subscriptionExpiresAt DateTime?
   isTrialUsed           Boolean           @default(false)
@@ -110,24 +110,25 @@ enum Gender {
 
 // Subscription Plan Model
 enum PlanCategory {
-  BASIC
-  PROFESSIONAL
-  EUROPEAN
+  BASIC_SHOP_PLAN
+  PROFESSIONAL_SHOP_PLAN
+  EUROPEAN_SPECIALIST_PLAN
 }
 
 model SubscriptionPlan {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  name      String   @unique // e.g. "Free Plan", "Monthly Plan", "Yearly Plan"
-  category  PlanCategory @default(BASIC) // Stable identifier for logic
-  price     Float    // e.g. 0, 899, 2499
-  currency  String   @default("USD")
-  duration        String? // e.g. "monthly", "yearly"
-  technicianLimit Int     @default(0) // e.g. 3, 5
-  hasTrial        Boolean @default(false) // Only for Professional Shop Plan
-  features        String[] // Array of strings
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String       @id @default(auto()) @map("_id") @db.ObjectId
+  category        PlanCategory @unique // Stable identifier for logic
+  descriptionName String       @default("")// Human-readable name (e.g. "Basic Shop Plan")
+  description     String       @default("")// Marketing description text
+  price           Float       
+  currency        String       @default("USD")
+  duration        String?      // e.g. "monthly", "yearly"
+  technicianLimit Int          @default(0) // e.g. 3, 5
+  hasTrial        Boolean      @default(false) // Only for Professional Shop Plan
+  features        String[]     // Array of strings
+  isActive        Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
   User    User[]
   Payment Payment[]
@@ -142,18 +143,18 @@ enum PaymentStatus {
 }
 
 model Payment {
-  id            String           @id @default(auto()) @map("_id") @db.ObjectId
-  userId        String           @db.ObjectId
-  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  planId        String           @db.ObjectId
-  plan          SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
-  amount        Float
-  status        PaymentStatus    @default(PENDING)
-  transactionId String?          @unique
-  invoiceId     String?          @default("")
-  subscriptionId String?         @default("")
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  id             String           @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String           @db.ObjectId
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId         String           @db.ObjectId
+  plan           SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  amount         Float
+  status         PaymentStatus    @default(PENDING)
+  transactionId  String?          @unique
+  invoiceId      String?          @default("")
+  subscriptionId String?          @default("")
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
   @@map("payments")
 }
