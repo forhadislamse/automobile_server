@@ -110,9 +110,9 @@ enum Gender {
 
 // Subscription Plan Model
 enum PlanCategory {
-  BASIC_SHOP_PLAN
-  PROFESSIONAL_SHOP_PLAN
-  EUROPEAN_SPECIALIST_PLAN
+  BASIC
+  PROFESSIONAL
+  EUROPEAN
 }
 
 model SubscriptionPlan {
