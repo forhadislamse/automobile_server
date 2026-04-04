@@ -60,14 +60,12 @@ const updatePlan = async (id: string, payload: Partial<ISubscriptionPlan>) => {
     const existing = await prisma.subscriptionPlan.findUnique({ where: { id } });
     if (!existing) throw new ApiError(404, 'Plan not found');
 
-    if (payload.name && payload.name !== existing.name) {
-        const duplicate = await prisma.subscriptionPlan.findUnique({ where: { name: payload.name } });
-        if (duplicate) throw new ApiError(409, `Plan with name "${payload.name}" already exists`);
-    }
+    // Prevent 'category' from being updated via regular CRUD to ensure AI logic stability
+    const { category, ...updateData } = payload;
 
     const updated = await prisma.subscriptionPlan.update({
         where: { id },
-        data: payload
+        data: updateData
     });
 
     return updated;
