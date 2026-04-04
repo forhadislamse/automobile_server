@@ -77,7 +77,7 @@ const createSubscriptionIntent = async (userId: string, planId: string) => {
         stripePriceId = prices.data[0].id;
     } else {
         const product = await stripe.products.create({
-            name: plan.name,
+            name: plan.name as string,
             description: plan.features.join(', ').substring(0, 250),
             metadata: { planId: plan.id }
         });
@@ -96,7 +96,7 @@ const createSubscriptionIntent = async (userId: string, planId: string) => {
 
     // 6. Create NEW Subscription
     const subscription = await stripe.subscriptions.create({
-        customer: customerId,
+        customer: customerId as string,
         items: [{ price: stripePriceId }],
         description: `Subscription for ${plan.name} - Plan ID: ${plan.id} - User: ${user.email}`,
         payment_behavior: 'default_incomplete',
@@ -116,15 +116,14 @@ const createSubscriptionIntent = async (userId: string, planId: string) => {
     }
 
     // 7. Create NEW Payment record in DB for history tracking
-    // @ts-ignore
     const paymentRecord = await prisma.payment.create({
         data: {
             userId: user.id,
             planId: plan.id,
             amount: plan.price,
             status: 'PENDING',
-            transactionId: paymentIntent.id,
-            invoiceId: invoice.id
+            transactionId: paymentIntent.id as string,
+            invoiceId: invoice.id as string
         }
     });
 

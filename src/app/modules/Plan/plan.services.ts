@@ -4,11 +4,11 @@ import ApiError from '../../../errors/ApiErrors';
 
 const createPlan = async (payload: ISubscriptionPlan) => {
     const existing = await prisma.subscriptionPlan.findUnique({
-        where: { name: payload.name }
+        where: { category: payload.category }
     });
 
     if (existing) {
-        throw new ApiError(409, `Plan with name "${payload.name}" already exists`);
+        throw new ApiError(409, `Plan with category "${payload.category}" already exists`);
     }
 
     const plan = await prisma.subscriptionPlan.create({

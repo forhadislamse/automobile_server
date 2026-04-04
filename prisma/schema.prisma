@@ -118,8 +118,8 @@ enum PlanCategory {
 model SubscriptionPlan {
   id              String       @id @default(auto()) @map("_id") @db.ObjectId
   category        PlanCategory @unique // Stable identifier for logic
-  descriptionName String       @default("")// Human-readable name (e.g. "Basic Shop Plan")
-  description     String       @default("")// Marketing description text
+  name            String       @default("") // Human-readable name (e.g. "Basic Shop Plan")
+  description     String       @default("") // Marketing description text
   price           Float       
   currency        String       @default("USD")
   duration        String?      // e.g. "monthly", "yearly"
