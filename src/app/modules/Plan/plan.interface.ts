@@ -1,5 +1,5 @@
 export interface ISubscriptionPlan {
-    category: 'BASIC' | 'PROFESSIONAL' | 'EUROPEAN';
+    category: 'BASIC_SHOP_PLAN' | 'PROFESSIONAL_SHOP_PLAN' | 'EUROPEAN_SPECIALIST_PLAN';
     name: string;
     description: string;
     price: number;
