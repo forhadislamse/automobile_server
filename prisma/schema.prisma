@@ -123,7 +123,7 @@ model SubscriptionPlan {
   price           Float       
   currency        String       @default("USD")
   duration        String?      // e.g. "monthly", "yearly"
-  technicianLimit Int          @default(0) // e.g. 3, 5
+  technicianLimit Int           // e.g. 3, 5
   hasTrial        Boolean      @default(false) // Only for Professional Shop Plan
   features        String[]     // Array of strings
   isActive        Boolean      @default(true)
