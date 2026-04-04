@@ -87,7 +87,7 @@ const createSubscriptionIntent = async (userId: string, planId: string) => {
             unit_amount: Math.round(plan.price * 100),
             currency: plan.currency.toLowerCase(),
             recurring: {
-                interval: plan.duration === 'yearly' ? 'year' : 'month',
+                interval: plan.duration === 'YEARLY' ? 'year' : 'month',
             },
             lookup_key: `plan_${plan.id}`
         });
@@ -243,9 +243,9 @@ const confirmPayment = async (paymentId: string, paymentIntentId: string) => {
     });
 
     // 4. Update User Subscription Details
-    const duration = payment.plan.duration || 'monthly';
+    const duration = payment.plan.duration || 'MONTHLY';
     const expiresAt = new Date();
-    if (duration === 'yearly') {
+    if (duration === 'YEARLY') {
         expiresAt.setFullYear(expiresAt.getFullYear() + 1);
     } else {
         expiresAt.setMonth(expiresAt.getMonth() + 1);

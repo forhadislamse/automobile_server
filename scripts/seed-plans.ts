@@ -1,14 +1,14 @@
-import { PrismaClient, PlanCategory } from '@prisma/client';
+import { PrismaClient, PlanCategory, PlanDuration } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 const plans: any[] = [
   {
-    category: 'BASIC_SHOP_PLAN',
+    category: 'BASIC',
     name: 'Basic Shop Plan',
     description: 'Small teams handling everyday diagnostics who want to reduce guesswork and save time.',
     price: 79,
-    duration: 'monthly',
+    duration: 'MONTHLY',
     technicianLimit: 3,
     hasTrial: false,
     isActive: true,
@@ -20,11 +20,11 @@ const plans: any[] = [
     ],
   },
   {
-    category: 'PROFESSIONAL_SHOP_PLAN',
+    category: 'PROFESSIONAL',
     name: 'Professional Shop Plan',
     description: 'Includes all Basic Plan features plus advanced Transmission and Electrical diagnostic AI for deeper troubleshooting.',
     price: 129,
-    duration: 'monthly',
+    duration: 'MONTHLY',
     technicianLimit: 5,
     hasTrial: true,
     isActive: true,
@@ -38,11 +38,11 @@ const plans: any[] = [
     ],
   },
   {
-    category: 'EUROPEAN_SPECIALIST_PLAN',
+    category: 'EUROPEAN',
     name: 'European Specialist Plan',
     description: 'Includes all Professional Shop features plus a European Vehicle Specialist AI for advanced diagnostics on both European and domestic vehicles.',
     price: 179,
-    duration: 'monthly',
+    duration: 'MONTHLY',
     technicianLimit: 5,
     hasTrial: false,
     isActive: true,

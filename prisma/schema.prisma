@@ -115,14 +115,19 @@ enum PlanCategory {
   EUROPEAN
 }
 
+enum PlanDuration {
+  MONTHLY
+  YEARLY
+}
+
 model SubscriptionPlan {
   id              String       @id @default(auto()) @map("_id") @db.ObjectId
   category        PlanCategory @unique // Stable identifier for logic
   name            String       @default("") // Human-readable name (e.g. "Basic Shop Plan")
   description     String       @default("") // Marketing description text
-  price           Float       
+  price           Float        
   currency        String       @default("USD")
-  duration        String?      // e.g. "monthly", "yearly"
+  duration        PlanDuration @default(MONTHLY)
   technicianLimit Int           // e.g. 3, 5
   hasTrial        Boolean      @default(false) // Only for Professional Shop Plan
   features        String[]     // Array of strings
