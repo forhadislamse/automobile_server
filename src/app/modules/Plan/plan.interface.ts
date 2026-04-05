@@ -1,5 +1,5 @@
 export interface IPlanPrice {
-    duration: 'MONTHLY' | 'YEARLY';
+    duration: 'Monthly' | 'Annually';
     price: number;
 }
 
@@ -8,6 +8,7 @@ export interface ISubscriptionPlan {
     name: string;
     description: string;
     prices: IPlanPrice[];
+    currency?: string;
     technicianLimit: number;
     hasTrial: boolean;
     features: string[];

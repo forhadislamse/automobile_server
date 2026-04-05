@@ -116,8 +116,8 @@ enum PlanCategory {
 }
 
 enum PlanDuration {
-  MONTHLY
-  YEARLY
+  Monthly
+  Annually
 }
 
 type PlanPrice {
@@ -130,6 +130,7 @@ model SubscriptionPlan {
   category        PlanCategory @unique // Category is unique again
   name            String       @default("") // Human-readable name (e.g. "Basic Shop Plan")
   description     String       @default("") // Marketing description text
+  currency        String       @default("USD") // Default currency
   prices          PlanPrice[]  // Nested pricing options
   technicianLimit Int           // e.g. 3, 5
   hasTrial        Boolean      @default(false) // Only for Professional Shop Plan

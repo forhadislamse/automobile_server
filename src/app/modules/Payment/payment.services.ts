@@ -12,7 +12,7 @@ const stripe = new Stripe(config.stripe.secret_key as string, {
  * Creates a Stripe Subscription (Incomplete) and returns the client_secret 
  * so the frontend can confirm the payment using Stripe Elements.
  */
-const createSubscriptionIntent = async (userId: string, planId: string, duration: 'MONTHLY' | 'YEARLY') => {
+const createSubscriptionIntent = async (userId: string, planId: string, duration: 'Monthly' | 'Annually') => {
     // 1. Fetch User
     const user = await prisma.user.findUnique({
         where: { id: userId },
@@ -84,7 +84,7 @@ const createSubscriptionIntent = async (userId: string, planId: string, duration
             unit_amount: Math.round(priceOption.price * 100),
             currency: 'usd',
             recurring: {
-                interval: duration === 'YEARLY' ? 'year' : 'month',
+                interval: duration === 'Annually' ? 'year' : 'month',
             },
             lookup_key: lookupKey
         });
@@ -243,9 +243,9 @@ const confirmPayment = async (paymentId: string, paymentIntentId: string) => {
     });
 
     // 4. Update User Subscription Details
-    const duration = payment.duration || 'MONTHLY'; // Get from Payment model
+    const duration = payment.duration || 'Monthly'; // Updated to friendly name
     const expiresAt = new Date();
-    if (duration === 'YEARLY') {
+    if (duration === 'Annually') {
         expiresAt.setFullYear(expiresAt.getFullYear() + 1);
     } else {
         expiresAt.setMonth(expiresAt.getMonth() + 1);
@@ -308,13 +308,13 @@ const startFreeTrial = async (userId: string, planId: string) => {
         },
     });
 
-    // 7. Create a $0 Payment record for history (Always YEARLY for trial auto-convert)
+    // 7. Create a $0 Payment record for history (Always Annually for trial auto-convert)
     await prisma.payment.create({
         data: {
             userId: user.id,
             planId: plan.id,
             amount: 0,
-            duration: 'YEARLY', // Trial converts to Annual
+            duration: 'Annually', // Updated to friendly name
             status: 'PAID',
             transactionId: `TRIAL_${Math.random().toString(36).substring(7).toUpperCase()}`,
             invoiceId: 'FREE_TRIAL'

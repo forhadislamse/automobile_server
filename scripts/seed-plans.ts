@@ -7,9 +7,10 @@ const plans: any[] = [
     category: 'BASIC',
     name: 'Basic Shop Plan',
     description: 'Small teams handling everyday diagnostics who want to reduce guesswork and save time.',
+    currency: 'USD',
     prices: [
-      { duration: 'MONTHLY', price: 99 },
-      { duration: 'YEARLY', price: 948 }, // $79 * 12
+      { duration: 'Monthly', price: 99 },
+      { duration: 'Annually', price: 948 }, // $79 * 12
     ],
     technicianLimit: 3,
     hasTrial: false,
@@ -17,16 +18,17 @@ const plans: any[] = [
     features: [
       'Shop Foreman AI',
       'Mechanical Diagnostics AI',
-      'OBD-II Code Interpreter AI'
+      'OBD-II Code Interpreter AI',
     ],
   },
   {
     category: 'PROFESSIONAL',
     name: 'Professional Shop Plan',
     description: 'Includes all Basic Plan features plus advanced Transmission and Electrical diagnostic AI for deeper troubleshooting.',
+    currency: 'USD',
     prices: [
-      { duration: 'MONTHLY', price: 159 },
-      { duration: 'YEARLY', price: 1548 }, // $129 * 12
+      { duration: 'Monthly', price: 159 },
+      { duration: 'Annually', price: 1548 }, // $129 * 12
     ],
     technicianLimit: 5,
     hasTrial: true, // Auto-converts to Annual Plan
@@ -36,16 +38,17 @@ const plans: any[] = [
       'Mechanical Diagnostics AI',
       'Electrical Diagnostics AI',
       'Transmission Diagnostics AI',
-      'OBD-II Code Interpreter AI'
+      'OBD-II Code Interpreter AI',
     ],
   },
   {
     category: 'EUROPEAN',
     name: 'European Specialist Plan',
     description: 'Includes all Professional Shop features plus a European Vehicle Specialist AI for advanced diagnostics on both European and domestic vehicles.',
+    currency: 'USD',
     prices: [
-      { duration: 'MONTHLY', price: 219 },
-      { duration: 'YEARLY', price: 2148 }, // $179 * 12
+      { duration: 'Monthly', price: 219 },
+      { duration: 'Annually', price: 2148 }, // $179 * 12
     ],
     technicianLimit: 5,
     hasTrial: false,
@@ -56,7 +59,7 @@ const plans: any[] = [
       'Electrical Diagnostics AI',
       'Transmission Diagnostics AI',
       'OBD-II Code Interpreter AI',
-      'European Vehicle Specialist AI'
+      'European Vehicle Specialist AI',
     ],
   },
 ];
