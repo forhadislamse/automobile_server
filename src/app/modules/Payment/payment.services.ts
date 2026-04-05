@@ -12,7 +12,7 @@ const stripe = new Stripe(config.stripe.secret_key as string, {
  * Creates a Stripe Subscription (Incomplete) and returns the client_secret 
  * so the frontend can confirm the payment using Stripe Elements.
  */
-const createSubscriptionIntent = async (userId: string, planId: string) => {
+const createSubscriptionIntent = async (userId: string, planId: string, duration: 'MONTHLY' | 'YEARLY') => {
     // 1. Fetch User
     const user = await prisma.user.findUnique({
         where: { id: userId },
@@ -22,9 +22,9 @@ const createSubscriptionIntent = async (userId: string, planId: string) => {
         throw new ApiError(404, 'User not found');
     }
 
-    // Check if user already has this specific plan active
-    if (user.isSubscribed && user.planId === planId && user.subscriptionExpiresAt && user.subscriptionExpiresAt > new Date()) {
-        throw new ApiError(httpStatus.BAD_REQUEST, "You already have an active subscription for this plan.");
+    // Check if user already has an active subscription
+    if (user.isSubscribed && user.subscriptionExpiresAt && user.subscriptionExpiresAt > new Date()) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "You already have an active subscription.");
     }
 
     // 2. Fetch Subscription Plan
@@ -40,11 +40,10 @@ const createSubscriptionIntent = async (userId: string, planId: string) => {
         throw new ApiError(400, 'This plan is currently not active');
     }
 
-    // Free plan bypass (No Stripe needed)
-    if (plan.price === 0) {
-        // Handle free plan logic directly here or via a separate endpoint
-        // For now, return a specific response that frontend can use to bypass Stripe
-        return { isFree: true, planDetails: plan };
+    // Find the price for the requested duration
+    const priceOption = plan.prices.find(p => p.duration === duration);
+    if (!priceOption) {
+        throw new ApiError(400, `Price option for ${duration} not found in this plan`);
     }
 
     // 3. Ensure User is a Stripe Customer
@@ -63,13 +62,11 @@ const createSubscriptionIntent = async (userId: string, planId: string) => {
         });
     }
 
-
-
     // 5. Handle Stripe Products/Prices dynamically
-    // ... logic to find/create Price ID ...
     let stripePriceId: string;
+    const lookupKey = `plan_${plan.id}_${duration.toLowerCase()}`;
     const prices = await stripe.prices.list({
-        lookup_keys: [`plan_${plan.id}`],
+        lookup_keys: [lookupKey],
         limit: 1
     });
 
@@ -77,19 +74,19 @@ const createSubscriptionIntent = async (userId: string, planId: string) => {
         stripePriceId = prices.data[0].id;
     } else {
         const product = await stripe.products.create({
-            name: plan.name as string,
+            name: `${plan.name} (${duration})`,
             description: plan.features.join(', ').substring(0, 250),
-            metadata: { planId: plan.id }
+            metadata: { planId: plan.id, duration }
         });
         
         const price = await stripe.prices.create({
             product: product.id,
-            unit_amount: Math.round(plan.price * 100),
-            currency: plan.currency.toLowerCase(),
+            unit_amount: Math.round(priceOption.price * 100),
+            currency: 'usd',
             recurring: {
-                interval: plan.duration === 'YEARLY' ? 'year' : 'month',
+                interval: duration === 'YEARLY' ? 'year' : 'month',
             },
-            lookup_key: `plan_${plan.id}`
+            lookup_key: lookupKey
         });
         stripePriceId = price.id;
     }
@@ -98,13 +95,14 @@ const createSubscriptionIntent = async (userId: string, planId: string) => {
     const subscription = await stripe.subscriptions.create({
         customer: customerId as string,
         items: [{ price: stripePriceId }],
-        description: `Subscription for ${plan.name} - Plan ID: ${plan.id} - User: ${user.email}`,
+        description: `Subscription for ${plan.name} (${duration}) - User: ${user.email}`,
         payment_behavior: 'default_incomplete',
         payment_settings: { save_default_payment_method: 'on_subscription' },
         expand: ['latest_invoice.payment_intent'],
         metadata: {
             userId: user.id,
-            planId: plan.id
+            planId: plan.id,
+            duration
         }
     });
 
@@ -115,15 +113,17 @@ const createSubscriptionIntent = async (userId: string, planId: string) => {
         throw new ApiError(500, 'Failed to generate payment intent');
     }
 
-    // 7. Create NEW Payment record in DB for history tracking
+    // 7. Create NEW Payment record in DB with duration tracking
     const paymentRecord = await prisma.payment.create({
         data: {
             userId: user.id,
             planId: plan.id,
-            amount: plan.price,
+            amount: priceOption.price,
+            duration: duration,
             status: 'PENDING',
             transactionId: paymentIntent.id as string,
-            invoiceId: invoice.id as string
+            invoiceId: invoice.id as string,
+            subscriptionId: subscription.id
         }
     });
 
@@ -243,7 +243,7 @@ const confirmPayment = async (paymentId: string, paymentIntentId: string) => {
     });
 
     // 4. Update User Subscription Details
-    const duration = payment.plan.duration || 'MONTHLY';
+    const duration = payment.duration || 'MONTHLY'; // Get from Payment model
     const expiresAt = new Date();
     if (duration === 'YEARLY') {
         expiresAt.setFullYear(expiresAt.getFullYear() + 1);
@@ -308,12 +308,13 @@ const startFreeTrial = async (userId: string, planId: string) => {
         },
     });
 
-    // 7. Create a $0 Payment record for history
+    // 7. Create a $0 Payment record for history (Always YEARLY for trial auto-convert)
     await prisma.payment.create({
         data: {
             userId: user.id,
             planId: plan.id,
             amount: 0,
+            duration: 'YEARLY', // Trial converts to Annual
             status: 'PAID',
             transactionId: `TRIAL_${Math.random().toString(36).substring(7).toUpperCase()}`,
             invoiceId: 'FREE_TRIAL'

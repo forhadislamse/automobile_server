@@ -120,14 +120,17 @@ enum PlanDuration {
   YEARLY
 }
 
+type PlanPrice {
+  duration PlanDuration
+  price    Float
+}
+
 model SubscriptionPlan {
   id              String       @id @default(auto()) @map("_id") @db.ObjectId
-  category        PlanCategory @unique // Stable identifier for logic
+  category        PlanCategory @unique // Category is unique again
   name            String       @default("") // Human-readable name (e.g. "Basic Shop Plan")
   description     String       @default("") // Marketing description text
-  price           Float        
-  currency        String       @default("USD")
-  duration        PlanDuration @default(MONTHLY)
+  prices          PlanPrice[]  // Nested pricing options
   technicianLimit Int           // e.g. 3, 5
   hasTrial        Boolean      @default(false) // Only for Professional Shop Plan
   features        String[]     // Array of strings
@@ -154,6 +157,7 @@ model Payment {
   planId         String           @db.ObjectId
   plan           SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
   amount         Float
+  duration       PlanDuration?    // Field added to track chosen duration
   status         PaymentStatus    @default(PENDING)
   transactionId  String?          @unique
   invoiceId      String?          @default("")
