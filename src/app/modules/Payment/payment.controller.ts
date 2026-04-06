@@ -7,14 +7,18 @@ import ApiError from '../../../errors/ApiErrors';
 
 const createSubscriptionIntent = catchAsync(async (req: Request, res: Response) => {
     const userId = req.user.id;
-    const { planId } = req.body;
+    const { planId, duration } = req.body;
 
     if (!planId) {
         throw new ApiError(400, 'planId is required');
     }
 
-    const result = await PaymentServices.createSubscriptionIntent(userId, planId);
-    
+    if (!duration) {
+        throw new ApiError(400, 'duration is required (Monthly or Annually)');
+    }
+
+    const result = await PaymentServices.createSubscriptionIntent(userId, planId, duration);
+
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
@@ -38,7 +42,7 @@ const confirmPayment = catchAsync(async (req: Request, res: Response) => {
     }
 
     const result = await PaymentServices.confirmPayment(id, paymentIntentId);
-    
+
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,

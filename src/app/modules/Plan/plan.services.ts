@@ -21,7 +21,7 @@ const createPlan = async (payload: ISubscriptionPlan) => {
 const getAllPlans = async () => {
     const plans = await prisma.subscriptionPlan.findMany({
         where: { isActive: true },
-        orderBy: { price: 'asc' }
+        orderBy: { createdAt: 'asc' } // Changed to createdAt as top-level 'price' is removed
     });
     return plans;
 };

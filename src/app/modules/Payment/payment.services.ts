@@ -78,7 +78,7 @@ const createSubscriptionIntent = async (userId: string, planId: string, duration
             description: plan.features.join(', ').substring(0, 250),
             metadata: { planId: plan.id, duration }
         });
-        
+
         const price = await stripe.prices.create({
             product: product.id,
             unit_amount: Math.round(priceOption.price * 100),
@@ -127,8 +127,8 @@ const createSubscriptionIntent = async (userId: string, planId: string, duration
         }
     });
 
-    return { 
-        subscriptionId: subscription.id, 
+    return {
+        subscriptionId: subscription.id,
         clientSecret: paymentIntent.client_secret,
         orderId: paymentRecord.id
     };
@@ -152,11 +152,11 @@ const handleWebhook = async (payload: string, sig: string) => {
             const invoice = event.data.object as Stripe.Invoice;
             const subId = invoice.subscription as string;
             const paymentIntentId = invoice.payment_intent as string;
-            
+
             if (subId) {
                 const subscription = await stripe.subscriptions.retrieve(subId);
                 const expiresAt = new Date(subscription.current_period_end * 1000);
-                
+
                 // Get planId from subscription metadata
                 const planId = subscription.metadata.planId;
                 const userId = subscription.metadata.userId;
@@ -166,9 +166,9 @@ const handleWebhook = async (payload: string, sig: string) => {
                     // @ts-ignore
                     await prisma.payment.updateMany({
                         where: { transactionId: paymentIntentId },
-                        data: { 
+                        data: {
                             status: 'PAID',
-                            invoiceId: invoice.id 
+                            invoiceId: invoice.id
                         }
                     });
                 }
