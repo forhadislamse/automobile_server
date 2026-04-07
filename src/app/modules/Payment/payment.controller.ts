@@ -62,16 +62,57 @@ const startFreeTrial = catchAsync(async (req: Request, res: Response) => {
     const result = await PaymentServices.startFreeTrial(userId, planId);
 
     sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: '14-day free trial started successfully',
-        data: result,
-    });
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Free trial started successfully',
+    data: result,
+  });
+});
+
+const cancelRenewal = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user.id;
+  const { subscriptionId } = req.params;
+  const result = await PaymentServices.cancelRenewal(userId, subscriptionId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Auto-renewal cancelled successfully',
+    data: result,
+  });
+});
+
+const resumeRenewal = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user.id;
+  const { subscriptionId } = req.params;
+  const result = await PaymentServices.resumeRenewal(userId, subscriptionId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Auto-renewal resumed successfully',
+    data: result,
+  });
+});
+
+const getMySubscriptions = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user.id;
+  const result = await PaymentServices.getMySubscriptions(userId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'My subscriptions fetched successfully',
+    data: result,
+  });
 });
 
 export const PaymentController = {
-    createSubscriptionIntent,
-    handleWebhook,
-    confirmPayment,
-    startFreeTrial
+  createSubscriptionIntent,
+  handleWebhook,
+  confirmPayment,
+  startFreeTrial,
+  cancelRenewal,
+  resumeRenewal,
+  getMySubscriptions
 };

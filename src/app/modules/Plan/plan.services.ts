@@ -11,6 +11,10 @@ const createPlan = async (payload: ISubscriptionPlan) => {
         throw new ApiError(409, `Plan with category "${payload.category}" already exists`);
     }
 
+    if (payload.hasTrial && payload.category !== 'PROFESSIONAL') {
+        throw new ApiError(400, 'Free trial can only be enabled for the Professional Shop Plan');
+    }
+
     const plan = await prisma.subscriptionPlan.create({
         data: payload
     });
@@ -62,6 +66,11 @@ const updatePlan = async (id: string, payload: Partial<ISubscriptionPlan>) => {
 
     // Prevent 'category' from being updated via regular CRUD to ensure AI logic stability
     const { category, ...updateData } = payload;
+
+    // Enforce trial restriction on update
+    if (updateData.hasTrial && (existing.category as string) !== 'PROFESSIONAL') {
+        throw new ApiError(400, 'Free trial can only be enabled for the Professional Shop Plan');
+    }
 
     const updated = await prisma.subscriptionPlan.update({
         where: { id },

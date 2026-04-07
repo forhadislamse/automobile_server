@@ -43,6 +43,9 @@ model User {
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
 
+  // Multi-plan relations
+  planSubscriptions     UserPlanSubscription[] @relation("OwnerSubscriptions")
+
   ownerId     String? @db.ObjectId
   owner       User?   @relation("ShopTechnicians", fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   technicians User[]  @relation("ShopTechnicians")
@@ -131,18 +134,40 @@ model SubscriptionPlan {
   name            String       @default("") // Human-readable name (e.g. "Basic Shop Plan")
   description     String       @default("") // Marketing description text
   currency        String       @default("USD") // Default currency
-  prices          PlanPrice[]  // Nested pricing options
-  technicianLimit Int           // e.g. 3, 5
+  prices          PlanPrice[] // Nested pricing options
+  technicianLimit Int // e.g. 3, 5
   hasTrial        Boolean      @default(false) // Only for Professional Shop Plan
-  features        String[]     // Array of strings
+  features        String[] // Array of strings
   isActive        Boolean      @default(true)
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
-  User    User[]
-  Payment Payment[]
+  User              User[]
+  Payment           Payment[]
+  // Relation to individual subscriptions
+  planSubscriptions UserPlanSubscription[] @relation("PlanSubscriptions")
 
   @@map("subscription_plans")
+}
+
+// Independent plan bucket for technician slot tracking
+model UserPlanSubscription {
+  id                   String           @id @default(auto()) @map("_id") @db.ObjectId
+  ownerId              String           @db.ObjectId
+  owner                User             @relation("OwnerSubscriptions", fields: [ownerId], references: [id])
+  planId               String           @db.ObjectId
+  plan                 SubscriptionPlan @relation("PlanSubscriptions", fields: [planId], references: [id])
+  duration             PlanDuration
+  isActive             Boolean          @default(true)
+  expiresAt            DateTime?
+  stripeSubscriptionId String?          @unique @default("")
+  technicianIds        String[]         @default([]) // Technician user IDs assigned to this plan
+  autoRenew            Boolean          @default(true)
+  cancelAtPeriodEnd    Boolean          @default(false) 
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  @@map("user_plan_subscriptions")
 }
 
 enum PaymentStatus {
@@ -158,7 +183,7 @@ model Payment {
   planId         String           @db.ObjectId
   plan           SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
   amount         Float
-  duration       PlanDuration?    // Field added to track chosen duration
+  duration       PlanDuration? // Field added to track chosen duration
   status         PaymentStatus    @default(PENDING)
   transactionId  String?          @unique
   invoiceId      String?          @default("")

@@ -11,6 +11,9 @@ const addTechnicianValidationSchema = z.object({
     passkey: z.string({
       required_error: 'Passkey is required',
     }).min(6, 'Passkey must be at least 6 characters'),
+    planSubscriptionId: z.string({
+      required_error: 'Plan subscription ID is required',
+    }),
   }),
 });
 

@@ -26,46 +26,76 @@ const addTechnician = async (ownerId: string, payload: TAddTechnician) => {
     throw new ApiError(httpStatus.PAYMENT_REQUIRED, 'You need an active subscription to add technicians');
   }
 
-  // 2. Check Technician Limit
-  const currentTechnicianCount = await prisma.user.count({
-    where: { ownerId: ownerId, role: UserRole.TECHNICIAN, isDeleted: false },
+  // 2. Fetch the specific Plan Subscription
+  const { planSubscriptionId, email, fullName, passkey } = payload;
+  
+  const planSubscription = await prisma.userPlanSubscription.findFirst({
+    where: { 
+      id: planSubscriptionId, 
+      ownerId: ownerId,
+      isActive: true 
+    },
+    include: { plan: true }
   });
 
-  if (currentTechnicianCount >= owner.plan.technicianLimit) {
+  if (!planSubscription) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Active plan subscription not found');
+  }
+
+  // 3. Check Technician Limit for THIS specific plan
+  const currentSlotCount = planSubscription.technicianIds.length;
+
+  if (currentSlotCount >= planSubscription.plan.technicianLimit) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
-      `Your current plan (${owner.plan.name}) allows a maximum of ${owner.plan.technicianLimit} technicians. Please upgrade for more.`
+      `This plan (${planSubscription.plan.name}) is full (${planSubscription.plan.technicianLimit}/${planSubscription.plan.technicianLimit} slots). Please use another plan or upgrade.`
     );
   }
 
-  // 3. Create Technician User
-  const { email, fullName, passkey } = payload;
-
-  const existingUser = await prisma.user.findUnique({ where: { email } });
-  if (existingUser) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'A user with this email already exists');
+  // 4. Create or reuse Technician User
+  let technician = await prisma.user.findUnique({ where: { email } });
+  
+  if (!technician) {
+    const hashedPassword = await bcrypt.hash(passkey, 10);
+    technician = await prisma.user.create({
+      data: {
+        email,
+        fullName,
+        password: hashedPassword,
+        role: UserRole.TECHNICIAN,
+        ownerId: ownerId,
+        status: 'ACTIVE',
+        isVerifyEmail: true,
+      },
+    });
+  } else {
+    // If technician already exists, they must be assigned to this owner
+    if (technician.ownerId !== ownerId) {
+      throw new ApiError(httpStatus.FORBIDDEN, 'This technician email is already registered with another shop');
+    }
   }
 
-  const hashedPassword = await bcrypt.hash(passkey, 10);
+  // 5. Add Technician ID to this Plan Subscription's array
+  // Check if technician is already in this specific plan
+  if (planSubscription.technicianIds.includes(technician.id)) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Technician is already added to this plan');
+  }
 
-  const newTechnician = await prisma.user.create({
+  await prisma.userPlanSubscription.update({
+    where: { id: planSubscriptionId },
     data: {
-      email,
-      fullName,
-      password: hashedPassword,
-      role: UserRole.TECHNICIAN,
-      ownerId: ownerId,
-      status: 'ACTIVE',
-      isVerifyEmail: true, // Auto-verify as it's an invitation
-    },
+      technicianIds: {
+        push: technician.id
+      }
+    }
   });
 
-  // 4. Send Invitation Email
+  // 6. Send Invitation Email (only if new user)
   const shopName = owner.shopName || 'Your Shop';
   const html = technicianInvitationTemplate(shopName, passkey);
   await emailSender(email, html, `Invitation to join ${shopName} on SmartAutoTech.ai`);
 
-  return newTechnician;
+  return technician;
 };
 
 const getShopTechnicians = async (ownerId: string) => {
@@ -84,25 +114,20 @@ const getShopTechnicians = async (ownerId: string) => {
 };
 
 const getTechnicianLimitInfo = async (ownerId: string) => {
-  const owner = await prisma.user.findUnique({
-    where: { id: ownerId },
-    include: { plan: true },
+  const subscriptions = await prisma.userPlanSubscription.findMany({
+    where: { ownerId: ownerId, isActive: true },
+    include: { plan: true }
   });
 
-  if (!owner || !owner.plan) {
-    return { limit: 0, current: 0, remaining: 0 };
-  }
-
-  const currentCount = await prisma.user.count({
-    where: { ownerId: ownerId, isDeleted: false },
-  });
-
-  return {
-    limit: owner.plan.technicianLimit,
-    current: currentCount,
-    remaining: Math.max(0, owner.plan.technicianLimit - currentCount),
-    planName: owner.plan.name,
-  };
+  return subscriptions.map(sub => ({
+    subscriptionId: sub.id,
+    planName: sub.plan.name,
+    limit: sub.plan.technicianLimit,
+    current: sub.technicianIds.length,
+    remaining: Math.max(0, sub.plan.technicianLimit - sub.technicianIds.length),
+    duration: sub.duration,
+    expiresAt: sub.expiresAt
+  }));
 };
 
 export const TechnicianServices = {

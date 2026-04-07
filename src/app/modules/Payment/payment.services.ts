@@ -157,13 +157,12 @@ const handleWebhook = async (payload: string, sig: string) => {
                 const subscription = await stripe.subscriptions.retrieve(subId);
                 const expiresAt = new Date(subscription.current_period_end * 1000);
 
-                // Get planId from subscription metadata
                 const planId = subscription.metadata.planId;
                 const userId = subscription.metadata.userId;
+                const duration = subscription.metadata.duration as any;
 
                 // Update Payment Status
                 if (paymentIntentId) {
-                    // @ts-ignore
                     await prisma.payment.updateMany({
                         where: { transactionId: paymentIntentId },
                         data: {
@@ -173,8 +172,25 @@ const handleWebhook = async (payload: string, sig: string) => {
                     });
                 }
 
-                // Update User Subscription
-                // @ts-ignore
+                // Create or Update UserPlanSubscription Bucket
+                await prisma.userPlanSubscription.upsert({
+                    where: { stripeSubscriptionId: subId }, 
+                    update: {
+                        isActive: true,
+                        expiresAt: expiresAt,
+                        cancelAtPeriodEnd: subscription.cancel_at_period_end
+                    },
+                    create: {
+                        ownerId: userId,
+                        planId: planId,
+                        duration: duration,
+                        stripeSubscriptionId: subId,
+                        expiresAt: expiresAt,
+                        isActive: true
+                    }
+                });
+
+                // Global user status update
                 await prisma.user.update({
                     where: { id: userId },
                     data: {
@@ -188,19 +204,21 @@ const handleWebhook = async (payload: string, sig: string) => {
 
         case 'customer.subscription.deleted':
             const subDeleted = event.data.object as Stripe.Subscription;
-            const customerId = subDeleted.customer as string;
-
-            const userToUnsub = await prisma.user.findFirst({
-                where: { stripeCustomerId: customerId }
+            await prisma.userPlanSubscription.updateMany({
+                where: { stripeSubscriptionId: subDeleted.id },
+                data: { isActive: false }
             });
 
-            if (userToUnsub) {
+            // If no more active subs, mark user as not subscribed
+            const ownerId = subDeleted.metadata.userId;
+            const activeSubs = await prisma.userPlanSubscription.count({
+                where: { ownerId: ownerId, isActive: true }
+            });
+
+            if (activeSubs === 0) {
                 await prisma.user.update({
-                    where: { id: userToUnsub.id },
-                    data: {
-                        isSubscribed: false,
-                        subscriptionExpiresAt: null,
-                    },
+                    where: { id: ownerId },
+                    data: { isSubscribed: false }
                 });
             }
             break;
@@ -213,15 +231,12 @@ const handleWebhook = async (payload: string, sig: string) => {
 };
 
 const confirmPayment = async (paymentId: string, paymentIntentId: string) => {
-    // 1. Retrieve the payment intent from Stripe to verify status
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
     if (paymentIntent.status !== "succeeded") {
         throw new ApiError(400, `Payment not confirmed. Stripe status: ${paymentIntent.status}`);
     }
 
-    // 2. Fetch the Payment record from our DB
-    // @ts-ignore
     const payment = await prisma.payment.findUnique({
         where: { id: paymentId },
         include: { plan: true }
@@ -235,15 +250,12 @@ const confirmPayment = async (paymentId: string, paymentIntentId: string) => {
         return { message: "Payment already confirmed", payment };
     }
 
-    // 3. Update Payment Status in DB
-    // @ts-ignore
     const updatedPayment = await prisma.payment.update({
         where: { id: paymentId },
         data: { status: 'PAID' }
     });
 
-    // 4. Update User Subscription Details
-    const duration = payment.duration || 'Monthly'; // Updated to friendly name
+    const duration = payment.duration || 'Monthly';
     const expiresAt = new Date();
     if (duration === 'Annually') {
         expiresAt.setFullYear(expiresAt.getFullYear() + 1);
@@ -251,7 +263,18 @@ const confirmPayment = async (paymentId: string, paymentIntentId: string) => {
         expiresAt.setMonth(expiresAt.getMonth() + 1);
     }
 
-    // @ts-ignore
+    // Create UserPlanSubscription
+    await prisma.userPlanSubscription.create({
+        data: {
+            ownerId: payment.userId,
+            planId: payment.planId,
+            duration: duration,
+            stripeSubscriptionId: payment.subscriptionId,
+            expiresAt: expiresAt,
+            isActive: true
+        }
+    });
+
     await prisma.user.update({
         where: { id: payment.userId },
         data: {
@@ -262,6 +285,61 @@ const confirmPayment = async (paymentId: string, paymentIntentId: string) => {
     });
 
     return updatedPayment;
+};
+
+const cancelRenewal = async (userId: string, subscriptionId: string) => {
+    const sub = await prisma.userPlanSubscription.findFirst({
+        where: { id: subscriptionId, ownerId: userId }
+    });
+
+    if (!sub || !sub.stripeSubscriptionId) {
+        throw new ApiError(404, "Active subscription not found");
+    }
+
+    const stripeSub = await stripe.subscriptions.update(sub.stripeSubscriptionId, {
+        cancel_at_period_end: true
+    });
+
+    await prisma.userPlanSubscription.update({
+        where: { id: subscriptionId },
+        data: { 
+            cancelAtPeriodEnd: true,
+            autoRenew: false
+        }
+    });
+
+    return { message: "Auto-renewal turned off. Plan will expire at end of period.", data: stripeSub };
+};
+
+const resumeRenewal = async (userId: string, subscriptionId: string) => {
+    const sub = await prisma.userPlanSubscription.findFirst({
+        where: { id: subscriptionId, ownerId: userId }
+    });
+
+    if (!sub || !sub.stripeSubscriptionId) {
+        throw new ApiError(404, "Subscription not found");
+    }
+
+    const stripeSub = await stripe.subscriptions.update(sub.stripeSubscriptionId, {
+        cancel_at_period_end: false
+    });
+
+    await prisma.userPlanSubscription.update({
+        where: { id: subscriptionId },
+        data: { 
+            cancelAtPeriodEnd: false,
+            autoRenew: true
+        }
+    });
+
+    return { message: "Auto-renewal resumed successfully.", data: stripeSub };
+};
+
+const getMySubscriptions = async (userId: string) => {
+    return await prisma.userPlanSubscription.findMany({
+        where: { ownerId: userId, isActive: true },
+        include: { plan: true }
+    });
 };
 
 const startFreeTrial = async (userId: string, planId: string) => {
@@ -288,9 +366,9 @@ const startFreeTrial = async (userId: string, planId: string) => {
         throw new ApiError(httpStatus.NOT_FOUND, 'Subscription plan not found');
     }
 
-    // 4. Verify if plan allows trial
-    if (!plan.hasTrial) {
-        throw new ApiError(httpStatus.BAD_REQUEST, 'This plan does not offer a free trial.');
+    // 4. Verify if plan allows trial AND it is a PROFESSIONAL plan
+    if (!plan.hasTrial || plan.category !== 'PROFESSIONAL') {
+        throw new ApiError(httpStatus.BAD_REQUEST, 'Free trial is only available for the Professional Shop Plan.');
     }
 
     // 5. Calculate expiry (14 days)
@@ -308,13 +386,25 @@ const startFreeTrial = async (userId: string, planId: string) => {
         },
     });
 
-    // 7. Create a $0 Payment record for history (Always Annually for trial auto-convert)
+    // Create UserPlanSubscription for Trial
+    await prisma.userPlanSubscription.create({
+        data: {
+            ownerId: userId,
+            planId: planId,
+            duration: 'Annually',
+            expiresAt: expiresAt,
+            isActive: true,
+            stripeSubscriptionId: `TRIAL_${Math.random().toString(36).substring(7).toUpperCase()}`
+        }
+    });
+
+    // 7. Create a $0 Payment record for history
     await prisma.payment.create({
         data: {
             userId: user.id,
             planId: plan.id,
             amount: 0,
-            duration: 'Annually', // Updated to friendly name
+            duration: 'Annually',
             status: 'PAID',
             transactionId: `TRIAL_${Math.random().toString(36).substring(7).toUpperCase()}`,
             invoiceId: 'FREE_TRIAL'
@@ -328,5 +418,8 @@ export const PaymentServices = {
     createSubscriptionIntent,
     handleWebhook,
     confirmPayment,
-    startFreeTrial
+    startFreeTrial,
+    cancelRenewal,
+    resumeRenewal,
+    getMySubscriptions
 };
