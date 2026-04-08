@@ -34,14 +34,17 @@ const handleWebhook = catchAsync(async (req: Request & { rawBody?: Buffer }, res
 });
 
 const confirmPayment = catchAsync(async (req: Request, res: Response) => {
-    const { id } = req.params; // payment record ID
-    const { paymentIntentId } = req.body;
+    const { paymentId, paymentIntentId } = req.body;
+
+    if (!paymentId) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "paymentId is required");
+    }
 
     if (!paymentIntentId) {
         throw new ApiError(httpStatus.BAD_REQUEST, "paymentIntentId is required");
     }
 
-    const result = await PaymentServices.confirmPayment(id, paymentIntentId);
+    const result = await PaymentServices.confirmPayment(paymentId, paymentIntentId);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,

@@ -536,7 +536,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"fullName\": \"Tech Mike\",\n    \"email\": \"mike@example.com\",\n    \"passkey\": \"securePass123\"\n}",
+              "raw": "{\n    \"fullName\": \"Tech Mike\",\n    \"email\": \"mike@example.com\",\n    \"passkey\": \"securePass123\",\n    \"planSubscriptionId\": \"PASTE_ACTIVE_SUBSCRIPTION_ID_HERE\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -605,7 +605,7 @@
       "name": "5. Payment Module",
       "item": [
         {
-          "name": "Start 14-Day Free Trial",
+          "name": "Start Free Trial (Professional Only)",
           "request": {
             "method": "POST",
             "header": [
@@ -616,7 +616,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"planId\": \"some-plan-id\"\n}",
+              "raw": "{\n    \"planId\": \"PROFESSIONAL_PLAN_ID_HERE\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -624,13 +624,13 @@
               }
             },
             "url": {
-              "raw": "{{baseUrl}}/payment/start-free-trial",
+              "raw": "{{baseUrl}}/payment/start-trial",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "payment",
-                "start-free-trial"
+                "start-trial"
               ]
             }
           }
@@ -647,7 +647,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"planId\": \"some-plan-id\"\n}",
+              "raw": "{\n    \"planId\": \"PLAN_ID_HERE\",\n    \"duration\": \"Monthly\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -678,7 +678,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"paymentIntentId\": \"pi_123456789\"\n}",
+              "raw": "{\n    \"paymentId\": \"PAYMENT_RECORD_ID_HERE\",\n    \"paymentIntentId\": \"pi_xxxxxxxxxxxx\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -686,14 +686,95 @@
               }
             },
             "url": {
-              "raw": "{{baseUrl}}/payment/confirm-payment/PAYMENT_DOC_ID_HERE",
+              "raw": "{{baseUrl}}/payment/confirm-payment",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "payment",
-                "confirm-payment",
-                "PAYMENT_DOC_ID_HERE"
+                "confirm-payment"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get My Subscriptions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payment/my-subscriptions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payment",
+                "my-subscriptions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancel Auto Renewal",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payment/subscription/:subscriptionId/cancel-renewal",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payment",
+                "subscription",
+                ":subscriptionId",
+                "cancel-renewal"
+              ],
+              "variable": [
+                {
+                  "key": "subscriptionId",
+                  "value": ""
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Resume Auto Renewal",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payment/subscription/:subscriptionId/resume-renewal",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payment",
+                "subscription",
+                ":subscriptionId",
+                "resume-renewal"
+              ],
+              "variable": [
+                {
+                  "key": "subscriptionId",
+                  "value": ""
+                }
               ]
             }
           }
@@ -725,7 +806,8 @@
           }
         }
       ]
-    },
+    }
+,
     {
       "name": "6. File Uploads",
       "item": [
