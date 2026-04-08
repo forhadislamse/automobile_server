@@ -72,6 +72,23 @@ const createSubscriptionIntent = async (userId: string, planId: string, duration
 
     if (prices.data.length > 0) {
         stripePriceId = prices.data[0].id;
+        const productId = prices.data[0].product as string;
+
+        // If the price or its product is inactive, reactivate them
+        if (!prices.data[0].active) {
+            await stripe.prices.update(stripePriceId, { active: true });
+        }
+
+        // Also ensure the product is active
+        const product = await stripe.products.retrieve(productId);
+        if (!product.active) {
+            await stripe.products.update(productId, { active: true });
+        }
+
+        // Small delay to ensure Stripe's internal state propagates
+        if (!prices.data[0].active || !product.active) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
     } else {
         const product = await stripe.products.create({
             name: `${plan.name} (${duration})`,
@@ -174,7 +191,7 @@ const handleWebhook = async (payload: string, sig: string) => {
 
                 // Create or Update UserPlanSubscription Bucket
                 await prisma.userPlanSubscription.upsert({
-                    where: { stripeSubscriptionId: subId }, 
+                    where: { stripeSubscriptionId: subId },
                     update: {
                         isActive: true,
                         expiresAt: expiresAt,
@@ -302,7 +319,7 @@ const cancelRenewal = async (userId: string, subscriptionId: string) => {
 
     await prisma.userPlanSubscription.update({
         where: { id: subscriptionId },
-        data: { 
+        data: {
             cancelAtPeriodEnd: true,
             autoRenew: false
         }
@@ -326,7 +343,7 @@ const resumeRenewal = async (userId: string, subscriptionId: string) => {
 
     await prisma.userPlanSubscription.update({
         where: { id: subscriptionId },
-        data: { 
+        data: {
             cancelAtPeriodEnd: false,
             autoRenew: true
         }
