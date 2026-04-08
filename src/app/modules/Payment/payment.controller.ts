@@ -110,6 +110,25 @@ const getMySubscriptions = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const updateSubscriptionDuration = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user.id;
+  const { subscriptionId } = req.params;
+  const { newDuration } = req.body;
+
+  if (!newDuration || !['Monthly', 'Annually'].includes(newDuration)) {
+    throw new ApiError(400, 'Valid newDuration is required (Monthly or Annually)');
+  }
+
+  const result = await PaymentServices.updateSubscriptionDuration(userId, subscriptionId, newDuration);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Subscription duration updated successfully',
+    data: result,
+  });
+});
+
 export const PaymentController = {
   createSubscriptionIntent,
   handleWebhook,
@@ -117,5 +136,6 @@ export const PaymentController = {
   startFreeTrial,
   cancelRenewal,
   resumeRenewal,
-  getMySubscriptions
+  getMySubscriptions,
+  updateSubscriptionDuration
 };

@@ -780,6 +780,45 @@
           }
         },
         {
+          "name": "Update Subscription Duration",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"newDuration\": \"Annually\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payment/subscription/:subscriptionId/update-duration",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payment",
+                "subscription",
+                ":subscriptionId",
+                "update-duration"
+              ],
+              "variable": [
+                {
+                  "key": "subscriptionId",
+                  "value": ""
+                }
+              ]
+            }
+          }
+        },
+        {
           "name": "Stripe Webhook (Internal Use)",
           "request": {
             "method": "POST",

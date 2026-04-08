@@ -9,6 +9,58 @@ const stripe = new Stripe(config.stripe.secret_key as string, {
 });
 
 /**
+ * Helper to get or create a Stripe Price object for a given plan and duration.
+ */
+const getOrCreateStripePrice = async (plan: any, duration: 'Monthly' | 'Annually') => {
+    const priceOption = plan.prices.find((p: any) => p.duration === duration);
+    if (!priceOption) {
+        throw new ApiError(400, `Price option for ${duration} not found in this plan`);
+    }
+
+    const lookupKey = `plan_${plan.id}_${duration.toLowerCase()}`;
+    const prices = await stripe.prices.list({
+        lookup_keys: [lookupKey],
+        limit: 1
+    });
+
+    if (prices.data.length > 0) {
+        const stripePriceId = prices.data[0].id;
+        const productId = prices.data[0].product as string;
+
+        if (!prices.data[0].active) {
+            await stripe.prices.update(stripePriceId, { active: true });
+        }
+
+        const product = await stripe.products.retrieve(productId);
+        if (!product.active) {
+            await stripe.products.update(productId, { active: true });
+        }
+
+        if (!prices.data[0].active || !product.active) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        return stripePriceId;
+    } else {
+        const product = await stripe.products.create({
+            name: `${plan.name} (${duration})`,
+            description: plan.features.join(', ').substring(0, 250),
+            metadata: { planId: plan.id, duration }
+        });
+
+        const price = await stripe.prices.create({
+            product: product.id,
+            unit_amount: Math.round(priceOption.price * 100),
+            currency: 'usd',
+            recurring: {
+                interval: duration === 'Annually' ? 'year' : 'month',
+            },
+            lookup_key: lookupKey
+        });
+        return price.id;
+    }
+};
+
+/**
  * Creates a Stripe Subscription (Incomplete) and returns the client_secret 
  * so the frontend can confirm the payment using Stripe Elements.
  */
@@ -63,50 +115,7 @@ const createSubscriptionIntent = async (userId: string, planId: string, duration
     }
 
     // 5. Handle Stripe Products/Prices dynamically
-    let stripePriceId: string;
-    const lookupKey = `plan_${plan.id}_${duration.toLowerCase()}`;
-    const prices = await stripe.prices.list({
-        lookup_keys: [lookupKey],
-        limit: 1
-    });
-
-    if (prices.data.length > 0) {
-        stripePriceId = prices.data[0].id;
-        const productId = prices.data[0].product as string;
-
-        // If the price or its product is inactive, reactivate them
-        if (!prices.data[0].active) {
-            await stripe.prices.update(stripePriceId, { active: true });
-        }
-
-        // Also ensure the product is active
-        const product = await stripe.products.retrieve(productId);
-        if (!product.active) {
-            await stripe.products.update(productId, { active: true });
-        }
-
-        // Small delay to ensure Stripe's internal state propagates
-        if (!prices.data[0].active || !product.active) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-    } else {
-        const product = await stripe.products.create({
-            name: `${plan.name} (${duration})`,
-            description: plan.features.join(', ').substring(0, 250),
-            metadata: { planId: plan.id, duration }
-        });
-
-        const price = await stripe.prices.create({
-            product: product.id,
-            unit_amount: Math.round(priceOption.price * 100),
-            currency: 'usd',
-            recurring: {
-                interval: duration === 'Annually' ? 'year' : 'month',
-            },
-            lookup_key: lookupKey
-        });
-        stripePriceId = price.id;
-    }
+    const stripePriceId = await getOrCreateStripePrice(plan, duration);
 
     // 6. Create NEW Subscription
     const subscription = await stripe.subscriptions.create({
@@ -431,6 +440,68 @@ const startFreeTrial = async (userId: string, planId: string) => {
     return updatedUser;
 };
 
+const updateSubscriptionDuration = async (userId: string, subscriptionId: string, newDuration: 'Monthly' | 'Annually') => {
+    // 1. Fetch Subscription from DB
+    const sub = await prisma.userPlanSubscription.findUnique({
+        where: { id: subscriptionId },
+        include: { plan: true }
+    });
+
+    if (!sub || sub.ownerId !== userId || !sub.isActive) {
+        throw new ApiError(404, "Active subscription not found");
+    }
+
+    if (sub.duration === newDuration) {
+        throw new ApiError(400, `Subscription is already ${newDuration}`);
+    }
+
+    if (!sub.stripeSubscriptionId) {
+        throw new ApiError(400, "This subscription is not managed by Stripe (e.g., Trial)");
+    }
+
+    // 2. Get/Create the New Price ID
+    const newPriceId = await getOrCreateStripePrice(sub.plan, newDuration);
+
+    // 3. Retrieve Subscription from Stripe to find Item ID
+    const stripeSubscription = await stripe.subscriptions.retrieve(sub.stripeSubscriptionId);
+    const itemId = stripeSubscription.items.data[0].id;
+
+    // 4. Update Stripe Subscription with Proration
+    const updatedStripeSub = await stripe.subscriptions.update(sub.stripeSubscriptionId, {
+        items: [{
+            id: itemId,
+            price: newPriceId,
+        }],
+        proration_behavior: 'always_invoice', // Immediately charge/credit the difference
+        metadata: {
+            duration: newDuration // Update metadata for webhook consistency
+        }
+    });
+
+    // 5. Update Database
+    const expiresAt = new Date(updatedStripeSub.current_period_end * 1000);
+    const updatedSub = await prisma.userPlanSubscription.update({
+        where: { id: subscriptionId },
+        data: {
+            duration: newDuration,
+            expiresAt: expiresAt
+        }
+    });
+
+    // Also update global user status if this was their main plan
+    await prisma.user.updateMany({
+        where: { id: userId, planId: sub.planId },
+        data: {
+            subscriptionExpiresAt: expiresAt
+        }
+    });
+
+    return {
+        message: `Subscription updated to ${newDuration}. Prorated amount has been invoiced.`,
+        data: updatedSub
+    };
+};
+
 export const PaymentServices = {
     createSubscriptionIntent,
     handleWebhook,
@@ -438,5 +509,6 @@ export const PaymentServices = {
     startFreeTrial,
     cancelRenewal,
     resumeRenewal,
-    getMySubscriptions
+    getMySubscriptions,
+    updateSubscriptionDuration
 };

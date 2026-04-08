@@ -13,6 +13,7 @@ router.post('/start-trial', auth(UserRole.USER), PaymentController.startFreeTria
 router.get('/my-subscriptions', auth(UserRole.USER), PaymentController.getMySubscriptions);
 router.patch('/subscription/:subscriptionId/cancel-renewal', auth(UserRole.USER), PaymentController.cancelRenewal);
 router.patch('/subscription/:subscriptionId/resume-renewal', auth(UserRole.USER), PaymentController.resumeRenewal);
+router.patch('/subscription/:subscriptionId/update-duration', auth(UserRole.USER), PaymentController.updateSubscriptionDuration);
 
 router.post('/webhook', express.raw({ type: 'application/json' }), PaymentController.handleWebhook);
 
