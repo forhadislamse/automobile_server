@@ -22,7 +22,7 @@ const createSubscriptionIntent = catchAsync(async (req: Request, res: Response) 
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
-        message: 'Subscription intent created successfully',
+        message: result.message,
         data: result
     });
 });
@@ -52,24 +52,6 @@ const confirmPayment = catchAsync(async (req: Request, res: Response) => {
         message: "Payment confirmed successfully. Subscription activated.",
         data: result,
     });
-});
-
-const startFreeTrial = catchAsync(async (req: Request, res: Response) => {
-    const userId = req.user.id;
-    const { planId } = req.body;
-
-    if (!planId) {
-        throw new ApiError(httpStatus.BAD_REQUEST, 'planId is required');
-    }
-
-    const result = await PaymentServices.startFreeTrial(userId, planId);
-
-    sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: 'Free trial started successfully',
-    data: result,
-  });
 });
 
 const cancelRenewal = catchAsync(async (req: Request, res: Response) => {
@@ -133,7 +115,6 @@ export const PaymentController = {
   createSubscriptionIntent,
   handleWebhook,
   confirmPayment,
-  startFreeTrial,
   cancelRenewal,
   resumeRenewal,
   getMySubscriptions,

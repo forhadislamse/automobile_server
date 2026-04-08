@@ -74,10 +74,7 @@ const createSubscriptionIntent = async (userId: string, planId: string, duration
         throw new ApiError(404, 'User not found');
     }
 
-    // Check if user already has an active subscription
-    if (user.isSubscribed && user.subscriptionExpiresAt && user.subscriptionExpiresAt > new Date()) {
-        throw new ApiError(httpStatus.BAD_REQUEST, "You already have an active subscription.");
-    }
+    // Removed hard block to allow upgrading from trial or buying multiple technician slots (buckets)
 
     // 2. Fetch Subscription Plan
     const plan = await prisma.subscriptionPlan.findUnique({
@@ -98,7 +95,61 @@ const createSubscriptionIntent = async (userId: string, planId: string, duration
         throw new ApiError(400, `Price option for ${duration} not found in this plan`);
     }
 
-    // 3. Ensure User is a Stripe Customer
+    // 3. Ensure User is a Stripe Customer (Only if needed for payment)
+    const isProfessional = plan.category === 'PROFESSIONAL';
+    const isEligibleForTrial = !user.isTrialUsed && isProfessional;
+
+    if (isEligibleForTrial) {
+        // --- START AUTOMATIC TRIAL LOGIC ---
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 14);
+
+        // Update User
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                isSubscribed: true,
+                isTrialUsed: true,
+                planId: planId,
+                subscriptionExpiresAt: expiresAt,
+            },
+        });
+
+        // Create UserPlanSubscription bucket for Trial
+        const trialSub = await prisma.userPlanSubscription.create({
+            data: {
+                ownerId: userId,
+                planId: planId,
+                duration: duration,
+                expiresAt: expiresAt,
+                isActive: true,
+                stripeSubscriptionId: `TRIAL_${Math.random().toString(36).substring(7).toUpperCase()}`
+            }
+        });
+
+        // Create a $0 Payment record for history
+        const paymentRecord = await prisma.payment.create({
+            data: {
+                userId: user.id,
+                planId: plan.id,
+                amount: 0,
+                duration: duration,
+                status: 'PAID',
+                transactionId: `TRIAL_${Math.random().toString(36).substring(7).toUpperCase()}`,
+                invoiceId: 'FREE_TRIAL',
+                subscriptionId: trialSub.stripeSubscriptionId
+            }
+        });
+
+        return {
+            trialStarted: true,
+            message: `Free 14-day trial started for ${plan.name}`,
+            subscriptionId: trialSub.stripeSubscriptionId,
+            expiresAt: expiresAt
+        };
+    }
+
+    // --- PROCEED WITH STRIPE PAYMENT FLOW ---
     let customerId = user.stripeCustomerId;
     if (!customerId) {
         const customer = await stripe.customers.create({
@@ -154,9 +205,11 @@ const createSubscriptionIntent = async (userId: string, planId: string, duration
     });
 
     return {
+        trialStarted: false,
         subscriptionId: subscription.id,
         clientSecret: paymentIntent.client_secret,
-        orderId: paymentRecord.id
+        orderId: paymentRecord.id,
+        message: 'Payment intent created successfully'
     };
 };
 
@@ -225,7 +278,17 @@ const handleWebhook = async (payload: string, sig: string) => {
                     });
                 }
 
-                // 2. Create or Update UserPlanSubscription Bucket
+                // 2. Deactivate any existing Trials for this user before enabling the paid plan
+                await prisma.userPlanSubscription.updateMany({
+                    where: { 
+                        ownerId: userId, 
+                        isActive: true,
+                        stripeSubscriptionId: { startsWith: 'TRIAL_' }
+                    },
+                    data: { isActive: false }
+                });
+
+                // 3. Create or Update UserPlanSubscription Bucket
                 await prisma.userPlanSubscription.upsert({
                     where: { stripeSubscriptionId: subId },
                     update: {
@@ -320,6 +383,16 @@ const confirmPayment = async (paymentId: string, paymentIntentId: string) => {
         expiresAt.setMonth(expiresAt.getMonth() + 1);
     }
 
+    // Deactivate any existing Trials for this user before enabling the paid plan
+    await prisma.userPlanSubscription.updateMany({
+        where: { 
+            ownerId: payment.userId, 
+            isActive: true,
+            stripeSubscriptionId: { startsWith: 'TRIAL_' }
+        },
+        data: { isActive: false }
+    });
+
     // Create UserPlanSubscription
     await prisma.userPlanSubscription.create({
         data: {
@@ -399,77 +472,6 @@ const getMySubscriptions = async (userId: string) => {
     });
 };
 
-const startFreeTrial = async (userId: string, planId: string) => {
-    // 1. Fetch User
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-    });
-
-    if (!user) {
-        throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
-    }
-
-    // 2. Check if user already used a trial
-    if (user.isTrialUsed) {
-        throw new ApiError(httpStatus.BAD_REQUEST, 'You have already used your free trial.');
-    }
-
-    // 3. Fetch Subscription Plan
-    const plan = await prisma.subscriptionPlan.findUnique({
-        where: { id: planId }
-    });
-
-    if (!plan) {
-        throw new ApiError(httpStatus.NOT_FOUND, 'Subscription plan not found');
-    }
-
-    // 4. Verify if plan allows trial AND it is a PROFESSIONAL plan
-    if (!plan.hasTrial || plan.category !== 'PROFESSIONAL') {
-        throw new ApiError(httpStatus.BAD_REQUEST, 'Free trial is only available for the Professional Shop Plan.');
-    }
-
-    // 5. Calculate expiry (14 days)
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 14);
-
-    // 6. Update User
-    const updatedUser = await prisma.user.update({
-        where: { id: userId },
-        data: {
-            isSubscribed: true,
-            isTrialUsed: true,
-            planId: planId,
-            subscriptionExpiresAt: expiresAt,
-        },
-    });
-
-    // Create UserPlanSubscription for Trial
-    await prisma.userPlanSubscription.create({
-        data: {
-            ownerId: userId,
-            planId: planId,
-            duration: 'Annually',
-            expiresAt: expiresAt,
-            isActive: true,
-            stripeSubscriptionId: `TRIAL_${Math.random().toString(36).substring(7).toUpperCase()}`
-        }
-    });
-
-    // 7. Create a $0 Payment record for history
-    await prisma.payment.create({
-        data: {
-            userId: user.id,
-            planId: plan.id,
-            amount: 0,
-            duration: 'Annually',
-            status: 'PAID',
-            transactionId: `TRIAL_${Math.random().toString(36).substring(7).toUpperCase()}`,
-            invoiceId: 'FREE_TRIAL'
-        }
-    });
-
-    return updatedUser;
-};
 
 const updateSubscriptionDuration = async (userId: string, subscriptionId: string, newDuration: 'Monthly' | 'Annually') => {
     // 1. Fetch Subscription from DB
@@ -537,7 +539,6 @@ export const PaymentServices = {
     createSubscriptionIntent,
     handleWebhook,
     confirmPayment,
-    startFreeTrial,
     cancelRenewal,
     resumeRenewal,
     getMySubscriptions,

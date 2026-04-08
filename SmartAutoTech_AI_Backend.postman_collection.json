@@ -636,7 +636,7 @@
           }
         },
         {
-          "name": "Create Subscription Intent",
+          "name": "Create Subscription Intent (Auto Trial for Professional)",
           "request": {
             "method": "POST",
             "header": [
@@ -647,7 +647,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"planId\": \"PLAN_ID_HERE\",\n    \"duration\": \"Monthly\"\n}",
+              "raw": "{\n    \"planId\": \"PLAN_ID\",\n    \"duration\": \"Monthly\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -663,11 +663,12 @@
                 "payment",
                 "create-subscription-intent"
               ]
-            }
+            },
+            "description": "If user is eligible for trial and selects Professional Plan, trial starts automatically. Otherwise, a Stripe payment intent is returned."
           }
         },
         {
-          "name": "Confirm Payment Status",
+          "name": "Confirm Payment / Subscription Status",
           "request": {
             "method": "POST",
             "header": [

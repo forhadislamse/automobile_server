@@ -5,10 +5,8 @@ import { UserRole } from '@prisma/client';
 
 const router = express.Router();
 
-router.post('/create-subscription-intent', auth(), PaymentController.createSubscriptionIntent);
-router.post('/start-free-trial', auth(), PaymentController.startFreeTrial);
+router.post('/create-subscription-intent', auth(UserRole.USER), PaymentController.createSubscriptionIntent);
 router.post('/confirm-payment', auth(UserRole.USER), PaymentController.confirmPayment);
-router.post('/start-trial', auth(UserRole.USER), PaymentController.startFreeTrial);
 
 router.get('/my-subscriptions', auth(UserRole.USER), PaymentController.getMySubscriptions);
 router.patch('/subscription/:subscriptionId/cancel-renewal', auth(UserRole.USER), PaymentController.cancelRenewal);
