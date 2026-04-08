@@ -187,24 +187,53 @@ const handleWebhook = async (payload: string, sig: string) => {
                 const userId = subscription.metadata.userId;
                 const duration = subscription.metadata.duration as any;
 
-                // Update Payment Status
-                if (paymentIntentId) {
-                    await prisma.payment.updateMany({
-                        where: { transactionId: paymentIntentId },
+                // 1. Update or Create Payment record for billing history
+                const amountPaid = (invoice.amount_paid / 100);
+                
+                // Check if we already have a record for this invoice
+                const existingPayment = await prisma.payment.findFirst({
+                    where: { 
+                        OR: [
+                            { invoiceId: invoice.id },
+                            { transactionId: paymentIntentId }
+                        ]
+                    }
+                });
+
+                if (existingPayment) {
+                    await prisma.payment.update({
+                        where: { id: existingPayment.id },
                         data: {
                             status: 'PAID',
-                            invoiceId: invoice.id
+                            invoiceId: invoice.id,
+                            transactionId: paymentIntentId
+                        }
+                    });
+                } else {
+                    // Create NEW Payment record for recurring renewal
+                    await prisma.payment.create({
+                        data: {
+                            userId: userId,
+                            planId: planId,
+                            amount: amountPaid,
+                            duration: duration,
+                            status: 'PAID',
+                            transactionId: paymentIntentId,
+                            invoiceId: invoice.id,
+                            subscriptionId: subId
                         }
                     });
                 }
 
-                // Create or Update UserPlanSubscription Bucket
+                // 2. Create or Update UserPlanSubscription Bucket
                 await prisma.userPlanSubscription.upsert({
                     where: { stripeSubscriptionId: subId },
                     update: {
                         isActive: true,
                         expiresAt: expiresAt,
-                        cancelAtPeriodEnd: subscription.cancel_at_period_end
+                        duration: duration, 
+                        cancelAtPeriodEnd: subscription.cancel_at_period_end,
+                        autoRenew: !subscription.cancel_at_period_end
                     },
                     create: {
                         ownerId: userId,
@@ -212,7 +241,9 @@ const handleWebhook = async (payload: string, sig: string) => {
                         duration: duration,
                         stripeSubscriptionId: subId,
                         expiresAt: expiresAt,
-                        isActive: true
+                        isActive: true,
+                        autoRenew: !subscription.cancel_at_period_end,
+                        cancelAtPeriodEnd: subscription.cancel_at_period_end
                     }
                 });
 
@@ -329,8 +360,8 @@ const cancelRenewal = async (userId: string, subscriptionId: string) => {
     await prisma.userPlanSubscription.update({
         where: { id: subscriptionId },
         data: {
-            cancelAtPeriodEnd: true,
-            autoRenew: false
+            cancelAtPeriodEnd: stripeSub.cancel_at_period_end,
+            autoRenew: !stripeSub.cancel_at_period_end
         }
     });
 
@@ -353,8 +384,8 @@ const resumeRenewal = async (userId: string, subscriptionId: string) => {
     await prisma.userPlanSubscription.update({
         where: { id: subscriptionId },
         data: {
-            cancelAtPeriodEnd: false,
-            autoRenew: true
+            cancelAtPeriodEnd: stripeSub.cancel_at_period_end,
+            autoRenew: !stripeSub.cancel_at_period_end
         }
     });
 
