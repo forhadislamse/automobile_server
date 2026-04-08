@@ -29,10 +29,12 @@ const checkSubscription = async (
             throw new ApiError(httpStatus.NOT_FOUND, "User not found!");
         }
 
+        const now = new Date();
+        
+        // Populate local variables from userData
         let isSubscribed = false;
         let subscriptionExpiresAt: Date | null = null;
 
-        // Logic: If technician, check owner's sub. If shop owner, check own sub.
         if (userData.role === UserRole.TECHNICIAN && userData.ownerId) {
             isSubscribed = userData.owner?.isSubscribed || false;
             subscriptionExpiresAt = userData.owner?.subscriptionExpiresAt || null;
@@ -41,9 +43,26 @@ const checkSubscription = async (
             subscriptionExpiresAt = userData.subscriptionExpiresAt;
         }
 
-        const now = new Date();
-        if (!isSubscribed || (subscriptionExpiresAt && subscriptionExpiresAt < now)) {
-            throw new ApiError(httpStatus.PAYMENT_REQUIRED, "Subscription required to access this content!");
+        // 1. Check primary status on User model (for speed)
+        let hasAccess = isSubscribed && subscriptionExpiresAt && subscriptionExpiresAt > now;
+
+        // 2. If not found on User model, check all active buckets
+        if (!hasAccess) {
+            const activeBucket = await prisma.userPlanSubscription.findFirst({
+                where: {
+                    ownerId: userData.role === UserRole.TECHNICIAN ? userData.ownerId! : userData.id,
+                    isActive: true,
+                    expiresAt: { gt: now }
+                }
+            });
+            
+            if (activeBucket) {
+                hasAccess = true;
+            }
+        }
+
+        if (!hasAccess) {
+            throw new ApiError(httpStatus.PAYMENT_REQUIRED, "No active subscription or trial found!");
         }
 
         next();

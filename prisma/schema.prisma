@@ -42,7 +42,7 @@ model User {
   isTrialUsed           Boolean           @default(false)
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
-
+ 
   // Multi-plan relations
   planSubscriptions     UserPlanSubscription[] @relation("OwnerSubscriptions")
 
