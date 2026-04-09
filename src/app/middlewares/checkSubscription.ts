@@ -31,33 +31,44 @@ const checkSubscription = async (
 
         const now = new Date();
         
-        // Populate local variables from userData
-        let isSubscribed = false;
-        let subscriptionExpiresAt: Date | null = null;
+        // 1. Check access based on User Role
+        let hasAccess = false;
 
         if (userData.role === UserRole.TECHNICIAN && userData.ownerId) {
-            isSubscribed = userData.owner?.isSubscribed || false;
-            subscriptionExpiresAt = userData.owner?.subscriptionExpiresAt || null;
-        } else {
-            isSubscribed = userData.isSubscribed;
-            subscriptionExpiresAt = userData.subscriptionExpiresAt;
-        }
-
-        // 1. Check primary status on User model (for speed)
-        let hasAccess = isSubscribed && subscriptionExpiresAt && subscriptionExpiresAt > now;
-
-        // 2. If not found on User model, check all active buckets
-        if (!hasAccess) {
-            const activeBucket = await prisma.userPlanSubscription.findFirst({
+            // STRICT CHECK for Technicians: Must belong to an ACTIVE, NOT EXPIRED bucket
+            const activeBucketForTech = await prisma.userPlanSubscription.findFirst({
                 where: {
-                    ownerId: userData.role === UserRole.TECHNICIAN ? userData.ownerId! : userData.id,
+                    ownerId: userData.ownerId,
                     isActive: true,
-                    expiresAt: { gt: now }
+                    expiresAt: { gt: now },
+                    technicianIds: { has: userData.id } // Strict bucket membership check
                 }
             });
-            
-            if (activeBucket) {
+
+            if (activeBucketForTech) {
                 hasAccess = true;
+            }
+        } else {
+            // CHECK for Shop Owners: Can use global fields OR any active bucket
+            const isSubscribed = userData.isSubscribed;
+            const subscriptionExpiresAt = userData.subscriptionExpiresAt;
+
+            // Fast track on User model
+            hasAccess = !!(isSubscribed && subscriptionExpiresAt && subscriptionExpiresAt > now);
+
+            // Fallback: Check all active buckets
+            if (!hasAccess) {
+                const activeBucket = await prisma.userPlanSubscription.findFirst({
+                    where: {
+                        ownerId: userData.id,
+                        isActive: true,
+                        expiresAt: { gt: now }
+                    }
+                });
+                
+                if (activeBucket) {
+                    hasAccess = true;
+                }
             }
         }
 
