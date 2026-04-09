@@ -24,18 +24,20 @@ const addTechnician = async (ownerId: string, payload: TAddTechnician) => {
 
   // 2. Fetch the specific Plan Subscription
   const { planSubscriptionId, email, fullName, passkey } = payload;
+  const now = new Date();
   
   const planSubscription = await prisma.userPlanSubscription.findFirst({
     where: { 
       id: planSubscriptionId, 
       ownerId: ownerId,
-      isActive: true 
+      isActive: true,
+      expiresAt: { gt: now }
     },
     include: { plan: true }
   });
 
   if (!planSubscription) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Active plan subscription not found');
+    throw new ApiError(httpStatus.NOT_FOUND, 'Active and non-expired plan subscription not found');
   }
 
   // 3. Check Technician Limit for THIS specific plan

@@ -33,13 +33,36 @@ const getMyProfile = async (userToken: string) => {
   // Check and update subscription status if expired
   const now = new Date();
   if (userProfile.isSubscribed && userProfile.subscriptionExpiresAt && userProfile.subscriptionExpiresAt < now) {
-    // Update DB for consistency
-    await prisma.user.update({
-      where: { id: userProfile.id },
-      data: { isSubscribed: false }
+    // Before marking as unsubscribed, check if there's ANOTHER active bucket
+    const activeBucket = await prisma.userPlanSubscription.findFirst({
+      where: { 
+        ownerId: userProfile.id, 
+        isActive: true, 
+        expiresAt: { gt: now } 
+      },
+      orderBy: { expiresAt: 'desc' } // Get the one that lasts the longest
     });
-    // Update local object for response
-    userProfile.isSubscribed = false;
+
+    if (activeBucket) {
+      // Self-heal: Update User model with the info from the active bucket
+      await prisma.user.update({
+        where: { id: userProfile.id },
+        data: { 
+          subscriptionExpiresAt: activeBucket.expiresAt,
+          planId: activeBucket.planId
+        }
+      });
+      userProfile.subscriptionExpiresAt = activeBucket.expiresAt;
+      userProfile.planId = activeBucket.planId;
+      // isSubscribed remains true
+    } else {
+      // Truly expired
+      await prisma.user.update({
+        where: { id: userProfile.id },
+        data: { isSubscribed: false }
+      });
+      userProfile.isSubscribed = false;
+    }
   }
 
   const userWithoutPassword = omit(userProfile, ["password"]);

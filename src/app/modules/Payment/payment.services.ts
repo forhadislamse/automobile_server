@@ -105,11 +105,15 @@ const createSubscriptionIntent = async (userId: string, planId: string, duration
         expiresAt.setDate(expiresAt.getDate() + 14);
 
         // Update User Profile to mark Trial as used safely
+        // Smart Update: Only push the date forward if the trial lasts longer than current sub
+        const shouldUpdateDate = !user.subscriptionExpiresAt || expiresAt > user.subscriptionExpiresAt;
+
         await prisma.user.update({
             where: { id: userId },
             data: {
                 isTrialUsed: true,
-                ...(!user.isSubscribed && {
+                isSubscribed: true,
+                ...(shouldUpdateDate && {
                     planId: planId,
                     subscriptionExpiresAt: expiresAt,
                 })
@@ -279,15 +283,18 @@ const handleWebhook = async (payload: string, sig: string) => {
                     });
                 }
 
-                // 2. Deactivate any existing Trials for this user before enabling the paid plan
-                await prisma.userPlanSubscription.updateMany({
-                    where: { 
-                        ownerId: userId, 
-                        isActive: true,
-                        stripeSubscriptionId: { startsWith: 'TRIAL_' }
-                    },
-                    data: { isActive: false }
-                });
+                // 2. Deactivate any existing Trials ONLY if they are upgrading to a PAID PROFESSIONAL plan
+                const plan = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
+                if (plan && plan.category === 'PROFESSIONAL') {
+                    await prisma.userPlanSubscription.updateMany({
+                        where: { 
+                            ownerId: userId, 
+                            isActive: true,
+                            stripeSubscriptionId: { startsWith: 'TRIAL_' }
+                        },
+                        data: { isActive: false }
+                    });
+                }
 
                 // 3. Create or Update UserPlanSubscription Bucket
                 await prisma.userPlanSubscription.upsert({
@@ -312,12 +319,18 @@ const handleWebhook = async (payload: string, sig: string) => {
                 });
 
                 // Global user status update
+                // Smart Update: Only push the date forward if new expiry is later
+                const user = await prisma.user.findUnique({ where: { id: userId } });
+                const shouldUpdateDate = !user?.subscriptionExpiresAt || expiresAt > user.subscriptionExpiresAt;
+
                 await prisma.user.update({
                     where: { id: userId },
                     data: {
                         isSubscribed: true,
-                        planId: planId,
-                        subscriptionExpiresAt: expiresAt,
+                        ...(shouldUpdateDate && {
+                            planId: planId,
+                            subscriptionExpiresAt: expiresAt,
+                        })
                     },
                 });
             }
@@ -384,15 +397,17 @@ const confirmPayment = async (paymentId: string, paymentIntentId: string) => {
         expiresAt.setMonth(expiresAt.getMonth() + 1);
     }
 
-    // Deactivate any existing Trials for this user before enabling the paid plan
-    await prisma.userPlanSubscription.updateMany({
-        where: { 
-            ownerId: payment.userId, 
-            isActive: true,
-            stripeSubscriptionId: { startsWith: 'TRIAL_' }
-        },
-        data: { isActive: false }
-    });
+    // 2. Deactivate any existing Trials ONLY if they are upgrading to a PAID PROFESSIONAL plan
+    if (payment.plan && payment.plan.category === 'PROFESSIONAL') {
+        await prisma.userPlanSubscription.updateMany({
+            where: { 
+                ownerId: payment.userId, 
+                isActive: true,
+                stripeSubscriptionId: { startsWith: 'TRIAL_' }
+            },
+            data: { isActive: false }
+        });
+    }
 
     // Create UserPlanSubscription
     await prisma.userPlanSubscription.create({
@@ -406,12 +421,18 @@ const confirmPayment = async (paymentId: string, paymentIntentId: string) => {
         }
     });
 
+    // Smart Update: Only push the date forward if new expiry is later
+    const user = await prisma.user.findUnique({ where: { id: payment.userId } });
+    const shouldUpdateDate = !user?.subscriptionExpiresAt || expiresAt > user.subscriptionExpiresAt;
+
     await prisma.user.update({
         where: { id: payment.userId },
         data: {
             isSubscribed: true,
-            planId: payment.planId,
-            subscriptionExpiresAt: expiresAt,
+            ...(shouldUpdateDate && {
+                planId: payment.planId,
+                subscriptionExpiresAt: expiresAt,
+            })
         },
     });
 
