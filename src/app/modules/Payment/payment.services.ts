@@ -104,14 +104,15 @@ const createSubscriptionIntent = async (userId: string, planId: string, duration
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 14);
 
-        // Update User Profile for Trial (isSubscribed remains false)
+        // Update User Profile to mark Trial as used safely
         await prisma.user.update({
             where: { id: userId },
             data: {
-                isSubscribed: false, 
                 isTrialUsed: true,
-                planId: planId,
-                subscriptionExpiresAt: expiresAt,
+                ...(!user.isSubscribed && {
+                    planId: planId,
+                    subscriptionExpiresAt: expiresAt,
+                })
             },
         });
 
@@ -139,17 +140,6 @@ const createSubscriptionIntent = async (userId: string, planId: string, duration
                 invoiceId: 'FREE_TRIAL',
                 subscriptionId: trialSub.stripeSubscriptionId
             }
-        });
-
-        // Update User Profile for Trial (isSubscribed remains false)
-        await prisma.user.update({
-            where: { id: userId },
-            data: {
-                isSubscribed: false, 
-                isTrialUsed: true,
-                planId: planId,
-                subscriptionExpiresAt: expiresAt,
-            },
         });
 
         return {

@@ -22,10 +22,6 @@ const addTechnician = async (ownerId: string, payload: TAddTechnician) => {
     throw new ApiError(httpStatus.FORBIDDEN, 'Only shop owners can add technicians');
   }
 
-  if (!owner.isSubscribed || !owner.plan) {
-    throw new ApiError(httpStatus.PAYMENT_REQUIRED, 'You need an active subscription to add technicians');
-  }
-
   // 2. Fetch the specific Plan Subscription
   const { planSubscriptionId, email, fullName, passkey } = payload;
   

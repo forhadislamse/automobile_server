@@ -605,37 +605,6 @@
       "name": "5. Payment Module",
       "item": [
         {
-          "name": "Start Free Trial (Professional Only)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"planId\": \"PROFESSIONAL_PLAN_ID_HERE\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/payment/start-trial",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "payment",
-                "start-trial"
-              ]
-            }
-          }
-        },
-        {
           "name": "Create Subscription Intent (Auto Trial for Professional)",
           "request": {
             "method": "POST",
