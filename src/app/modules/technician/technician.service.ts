@@ -52,9 +52,9 @@ const addTechnician = async (ownerId: string, payload: TAddTechnician) => {
 
   // 4. Create or reuse Technician User
   let technician = await prisma.user.findUnique({ where: { email } });
+  const hashedPassword = await bcrypt.hash(passkey, 10);
   
   if (!technician) {
-    const hashedPassword = await bcrypt.hash(passkey, 10);
     technician = await prisma.user.create({
       data: {
         email,
@@ -71,6 +71,12 @@ const addTechnician = async (ownerId: string, payload: TAddTechnician) => {
     if (technician.ownerId !== ownerId) {
       throw new ApiError(httpStatus.FORBIDDEN, 'This technician email is already registered with another shop');
     }
+
+    // Update password if a existing technician is added again (owner might give new passkey)
+    await prisma.user.update({
+      where: { id: technician.id },
+      data: { password: hashedPassword }
+    });
   }
 
   // 5. Add Technician ID to this Plan Subscription's array
@@ -88,7 +94,7 @@ const addTechnician = async (ownerId: string, payload: TAddTechnician) => {
     }
   });
 
-  // 6. Send Invitation Email (only if new user)
+  // 6. Always Send Invitation Email (Owner might provide new passkey)
   const shopName = owner.shopName || 'Your Shop';
   const html = technicianInvitationTemplate(shopName, passkey);
   await emailSender(email, html, `Invitation to join ${shopName} on SmartAutoTech.ai`);
