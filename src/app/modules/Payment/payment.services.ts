@@ -127,7 +127,7 @@ const createSubscriptionIntent = async (userId: string, planId: string, duration
         payment_behavior: 'default_incomplete',
         payment_settings: { save_default_payment_method: 'on_subscription' },
         trial_period_days: isEligibleForTrial ? 14 : undefined,
-        expand: ['latest_invoice.payment_intent'],
+        expand: ['latest_invoice.payment_intent', 'pending_setup_intent'],
         metadata: {
             userId: user.id,
             planId: plan.id,
@@ -138,9 +138,11 @@ const createSubscriptionIntent = async (userId: string, planId: string, duration
 
     const invoice = subscription.latest_invoice as Stripe.Invoice;
     const paymentIntent = invoice.payment_intent as Stripe.PaymentIntent;
+    const setupIntent = subscription.pending_setup_intent as Stripe.SetupIntent;
 
     // For trials, there might not be a payment intent immediately since it's $0
-    const clientSecret = paymentIntent?.client_secret || null;
+    // In that case, we use the setup_intent to collect the card details
+    const clientSecret = paymentIntent?.client_secret || setupIntent?.client_secret || null;
 
     // 7. Create NEW Payment record in DB with duration tracking
     const paymentRecord = await prisma.payment.create({
