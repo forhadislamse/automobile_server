@@ -35,11 +35,11 @@ const checkSubscription = async (
         let hasAccess = false;
 
         if (userData.role === UserRole.TECHNICIAN && userData.ownerId) {
-            // STRICT CHECK for Technicians: Must belong to an ACTIVE, NOT EXPIRED bucket
+            // STRICT CHECK for Technicians: Must belong to the single ACTIVE, NOT EXPIRED bucket (active or trialing)
             const activeBucketForTech = await prisma.userPlanSubscription.findFirst({
                 where: {
                     ownerId: userData.ownerId,
-                    isActive: true,
+                    status: { in: ['active', 'trialing'] },
                     expiresAt: { gt: now },
                     technicianIds: { has: userData.id } // Strict bucket membership check
                 }
@@ -49,26 +49,17 @@ const checkSubscription = async (
                 hasAccess = true;
             }
         } else {
-            // CHECK for Shop Owners: Can use global fields OR any active bucket
-            const isSubscribed = userData.isSubscribed;
-            const subscriptionExpiresAt = userData.subscriptionExpiresAt;
-
-            // Fast track on User model
-            hasAccess = !!(isSubscribed && subscriptionExpiresAt && subscriptionExpiresAt > now);
-
-            // Fallback: Check all active buckets
-            if (!hasAccess) {
-                const activeBucket = await prisma.userPlanSubscription.findFirst({
-                    where: {
-                        ownerId: userData.id,
-                        isActive: true,
-                        expiresAt: { gt: now }
-                    }
-                });
-                
-                if (activeBucket) {
-                    hasAccess = true;
+            // CHECK for Shop Owners: Use the single active bucket as the source of truth
+            const activeBucket = await prisma.userPlanSubscription.findFirst({
+                where: {
+                    ownerId: userData.id,
+                    status: { in: ['active', 'trialing'] },
+                    expiresAt: { gt: now }
                 }
+            });
+            
+            if (activeBucket) {
+                hasAccess = true;
             }
         }
 

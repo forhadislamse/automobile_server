@@ -1,0 +1,137 @@
+{
+	"info": {
+		"_postman_id": "smartautotech-v2-collection",
+		"name": "SmartAutoTech.ai API v2",
+		"description": "Comprehensive API documentation for the new Subscription (Status-based) and Technician Management system.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "json",
+							"json": "{\n  \"email\": \"owner@example.com\",\n  \"password\": \"password123\",\n  \"fullName\": \"John Owner\",\n  \"shopName\": \"Expert Auto\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register"
+						}
+					}
+				},
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "json",
+							"json": "{\n  \"email\": \"owner@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login"
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Payment & Subscriptions",
+			"item": [
+				{
+					"name": "Create Subscription Intent (Trial/Paid)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "json",
+							"json": "{\n  \"planId\": \"PLAN_ID_HERE\",\n  \"duration\": \"Monthly\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/payment/create-subscription-intent"
+						},
+						"description": "Professional প্ল্যান হলে ১৪ দিনের ট্রায়াল হবে। অন্যগুলোতে সরাসরি পেমেন্ট।"
+					}
+				},
+				{
+					"name": "Confirm Payment",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "json",
+							"json": "{\n  \"paymentId\": \"PAYMENT_RECORD_ID\",\n  \"paymentIntentId\": \"pi_XXXXXXXXXXXX\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/payment/confirm-payment"
+						}
+					}
+				},
+				{
+					"name": "Change Plan (Upgrade/Downgrade)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "json",
+							"json": "{\n  \"subscriptionId\": \"CURRENT_BUCKET_ID\",\n  \"newPlanId\": \"NEW_PLAN_ID\",\n  \"newDuration\": \"Annually\",\n  \"technicianIds\": [\"EXTSTING_TECH_ID_1\"] \n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/payment/change-plan"
+						},
+						"description": "Downgrade এর সময় technicianIds পাঠানো বাধ্যতামূলক।"
+					}
+				},
+				{
+					"name": "Get My Active Subscriptions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/payment/my-subscriptions"
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Technician",
+			"item": [
+				{
+					"name": "Add Technician",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "json",
+							"json": "{\n  \"email\": \"tech@example.com\",\n  \"fullName\": \"Technician One\",\n  \"passkey\": \"123456\",\n  \"planSubscriptionId\": \"ACTIVE_BUCKET_ID\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/technician/add"
+						}
+					}
+				},
+				{
+					"name": "Limit Info",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/technician/limit-info"
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5000/api/v1"
+		}
+	]
+}

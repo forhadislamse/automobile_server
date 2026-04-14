@@ -92,21 +92,26 @@ const getMySubscriptions = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const updateSubscriptionDuration = catchAsync(async (req: Request, res: Response) => {
+const changeSubscriptionPlan = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.id;
-  const { subscriptionId } = req.params;
-  const { newDuration } = req.body;
+  const { subscriptionId, newPlanId, newDuration, technicianIds } = req.body;
 
+  if (!subscriptionId) {
+    throw new ApiError(400, 'subscriptionId is required');
+  }
+  if (!newPlanId) {
+    throw new ApiError(400, 'newPlanId is required');
+  }
   if (!newDuration || !['Monthly', 'Annually'].includes(newDuration)) {
     throw new ApiError(400, 'Valid newDuration is required (Monthly or Annually)');
   }
 
-  const result = await PaymentServices.updateSubscriptionDuration(userId, subscriptionId, newDuration);
+  const result = await PaymentServices.changeSubscriptionPlan(userId, subscriptionId, newPlanId, newDuration, technicianIds);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: 'Subscription duration updated successfully',
+    message: result.message,
     data: result,
   });
 });
@@ -118,5 +123,5 @@ export const PaymentController = {
   cancelRenewal,
   resumeRenewal,
   getMySubscriptions,
-  updateSubscriptionDuration
+  changeSubscriptionPlan
 };

@@ -30,7 +30,7 @@ const addTechnician = async (ownerId: string, payload: TAddTechnician) => {
     where: { 
       id: planSubscriptionId, 
       ownerId: ownerId,
-      isActive: true,
+      status: { in: ['active', 'trialing'] },
       expiresAt: { gt: now }
     },
     include: { plan: true }
@@ -119,7 +119,7 @@ const getShopTechnicians = async (ownerId: string) => {
 
 const getTechnicianLimitInfo = async (ownerId: string) => {
   const subscriptions = await prisma.userPlanSubscription.findMany({
-    where: { ownerId: ownerId, isActive: true },
+    where: { ownerId: ownerId, status: { in: ['active', 'trialing'] } },
     include: { plan: true }
   });
 

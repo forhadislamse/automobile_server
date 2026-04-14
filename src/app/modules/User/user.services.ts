@@ -37,7 +37,7 @@ const getMyProfile = async (userToken: string) => {
     const activeBucket = await prisma.userPlanSubscription.findFirst({
       where: { 
         ownerId: userProfile.id, 
-        isActive: true, 
+        status: { in: ['active', 'trialing'] }, 
         expiresAt: { gt: now } 
       },
       orderBy: { expiresAt: 'desc' } // Get the one that lasts the longest
