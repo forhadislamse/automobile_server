@@ -12,6 +12,7 @@ import prisma from "../../../shared/prisma";
 
 
 const createUserIntoDb = async (payload: any) => {
+  console.log("Registration attempt: ", payload);
   const {
     email,
     phone,
@@ -39,31 +40,32 @@ const createUserIntoDb = async (payload: any) => {
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  const newUser = await prisma.user.create({
-    data: {
-      email,
-      phone,
-      password: hashedPassword,
-      fullName,
-      shopName,
-      shopAddress,
-      role,
-      gender: gender || "Male",
-      fcmToken,
-    },
-  });
-
-  // OTP
+  // OTP generation
   const otp = Number(crypto.randomInt(100000, 999999));
   const otpExpires = new Date(Date.now() + 5 * 60 * 1000);
 
-  await prisma.user.update({
-    where: { id: newUser.id },
-    data: {
-      otp,
-      otpExpiresAt: otpExpires,
-    },
-  });
+  let newUser;
+  try {
+    newUser = await prisma.user.create({
+      data: {
+        email,
+        phone,
+        password: hashedPassword,
+        fullName,
+        shopName,
+        shopAddress,
+        role,
+        gender: gender || "Male",
+        fcmToken: fcmToken || "",
+        otp,
+        otpExpiresAt: otpExpires,
+      },
+    });
+    console.log("User successfully created in DB:", newUser.id);
+  } catch (error) {
+    console.error("Prisma error during user creation:", error);
+    throw error;
+  }
 
   const token = jwtHelpers.generateToken(
     { id: newUser.id, email: newUser.email, role: newUser.role },
