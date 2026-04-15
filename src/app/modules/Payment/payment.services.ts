@@ -102,39 +102,51 @@ const createSubscriptionIntent = async (userId: string, planId: string, duration
     // --- PROCEED WITH STRIPE PAYMENT/TRIAL FLOW ---
     let customerId = user.stripeCustomerId;
     if (!customerId) {
-        const customer = await stripe.customers.create({
-            email: user.email as string,
-            metadata: {
-                userId: user.id,
-            },
-        });
-        customerId = customer.id;
-        await prisma.user.update({
-            where: { id: user.id },
-            data: { stripeCustomerId: customerId },
-        });
+        try {
+            const customer = await stripe.customers.create({
+                email: user.email as string,
+                metadata: {
+                    userId: user.id,
+                },
+            });
+            customerId = customer.id;
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { stripeCustomerId: customerId },
+            });
+            console.log("Stripe Customer Created:", customerId);
+        } catch (err: any) {
+            console.error("Stripe Customer Creation Failed:", err);
+            throw new ApiError(500, `Failed to create Stripe customer: ${err.message}`);
+        }
     }
 
     // 5. Handle Stripe Products/Prices dynamically
     const stripePriceId = await getOrCreateStripePrice(plan, duration);
 
     // 6. Create NEW Subscription
-    // 6. Create NEW Subscription (with optional trial)
-    const subscription = await stripe.subscriptions.create({
-        customer: customerId as string,
-        items: [{ price: stripePriceId }],
-        description: `Subscription for ${plan.name} (${duration}) - User: ${user.email}`,
-        payment_behavior: 'default_incomplete',
-        payment_settings: { save_default_payment_method: 'on_subscription' },
-        trial_period_days: isEligibleForTrial ? 14 : undefined,
-        expand: ['latest_invoice.payment_intent', 'pending_setup_intent'],
-        metadata: {
-            userId: user.id,
-            planId: plan.id,
-            duration,
-            isTrialAttempt: isEligibleForTrial ? 'true' : 'false'
-        }
-    });
+    let subscription;
+    try {
+        subscription = await stripe.subscriptions.create({
+            customer: customerId as string,
+            items: [{ price: stripePriceId }],
+            description: `Subscription for ${plan.name} (${duration}) - User: ${user.email}`,
+            payment_behavior: 'default_incomplete',
+            payment_settings: { save_default_payment_method: 'on_subscription' },
+            trial_period_days: isEligibleForTrial ? 14 : undefined,
+            expand: ['latest_invoice.payment_intent', 'pending_setup_intent'],
+            metadata: {
+                userId: user.id,
+                planId: plan.id,
+                duration,
+                isTrialAttempt: isEligibleForTrial ? 'true' : 'false'
+            }
+        });
+        console.log("Stripe Subscription Created:", subscription.id);
+    } catch (err: any) {
+        console.error("Stripe Subscription Creation Failed:", err);
+        throw new ApiError(500, `Failed to create Stripe subscription: ${err.message}`);
+    }
 
     const invoice = subscription.latest_invoice as Stripe.Invoice;
     const paymentIntent = invoice.payment_intent as Stripe.PaymentIntent;
@@ -353,10 +365,17 @@ const handleWebhook = async (payload: string, sig: string) => {
 };
 
 const confirmPayment = async (paymentId: string, paymentIntentId: string) => {
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    let status = "";
+    if (paymentIntentId.startsWith("seti_")) {
+        const setupIntent = await stripe.setupIntents.retrieve(paymentIntentId);
+        status = setupIntent.status;
+    } else {
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        status = paymentIntent.status;
+    }
 
-    if (paymentIntent.status !== "succeeded") {
-        throw new ApiError(400, `Payment not confirmed. Stripe status: ${paymentIntent.status}`);
+    if (status !== "succeeded") {
+        throw new ApiError(400, `Payment not confirmed. Stripe status: ${status}`);
     }
 
     const payment = await prisma.payment.findUnique({

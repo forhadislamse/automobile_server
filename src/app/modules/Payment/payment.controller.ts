@@ -9,6 +9,8 @@ const createSubscriptionIntent = catchAsync(async (req: Request, res: Response) 
     const userId = req.user.id;
     const { planId, duration } = req.body;
 
+    console.log("Create Intent Request Arrival:", { userId, body: req.body });
+
     if (!planId) {
         throw new ApiError(400, 'planId is required');
     }
