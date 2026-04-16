@@ -11,7 +11,7 @@ const emailSender = async (email: string, html: string, subject: string) => {
   });
 
   const info = await transporter.sendMail({
-    from: `"Regwheat Support" <${config.emailSender.email}>`,
+    from: `"SmartAutoTech Support" <${config.emailSender.email}>`,
     to: email,
     subject: subject,
     html,
