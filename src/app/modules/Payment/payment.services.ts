@@ -429,14 +429,6 @@ const confirmPayment = async (paymentId: string, paymentIntentId: string) => {
         data: { status: 'PAID' }
     });
 
-    const duration = payment.duration || 'Monthly';
-    const expiresAt = new Date();
-    if (duration === 'Annually') {
-        expiresAt.setFullYear(expiresAt.getFullYear() + 1);
-    } else {
-        expiresAt.setMonth(expiresAt.getMonth() + 1);
-    }
-
     // 2. ENFORCE SINGLE ACTIVE PLAN: Deactivate all EXISTING subscriptions 
     await prisma.userPlanSubscription.updateMany({
         where: { 
@@ -446,9 +438,19 @@ const confirmPayment = async (paymentId: string, paymentIntentId: string) => {
         data: { status: 'canceled' }
     });
 
-    // Create or Update UserPlanSubscription
+    // 3. Sync with Stripe Subscription Data
     const stripeSub = payment.subscriptionId ? await stripe.subscriptions.retrieve(payment.subscriptionId) : null;
     const finalStatus = stripeSub ? stripeSub.status : 'active';
+    
+    // Authortative expiration date from Stripe
+    const expiresAt = stripeSub 
+        ? new Date(stripeSub.current_period_end * 1000) 
+        : (() => {
+            const d = new Date();
+            if (payment.duration === 'Annually') d.setFullYear(d.getFullYear() + 1);
+            else d.setMonth(d.getMonth() + 1);
+            return d;
+        })();
 
     await prisma.userPlanSubscription.upsert({
         where: { stripeSubscriptionId: payment.subscriptionId || "UNKNOWN" },
@@ -459,7 +461,7 @@ const confirmPayment = async (paymentId: string, paymentIntentId: string) => {
         create: {
             ownerId: payment.userId,
             planId: payment.planId,
-            duration: duration,
+            duration: payment.duration as any,
             stripeSubscriptionId: payment.subscriptionId,
             expiresAt: expiresAt,
             status: finalStatus as any
