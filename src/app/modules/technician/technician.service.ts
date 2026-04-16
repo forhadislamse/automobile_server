@@ -22,13 +22,12 @@ const addTechnician = async (ownerId: string, payload: TAddTechnician) => {
     throw new ApiError(httpStatus.FORBIDDEN, 'Only shop owners can add technicians');
   }
 
-  // 2. Fetch the specific Plan Subscription
-  const { planSubscriptionId, email, fullName, passkey } = payload;
+  // 2. Automatically Fetch the Active Plan Subscription
+  const { email, fullName, passkey } = payload;
   const now = new Date();
   
   const planSubscription = await prisma.userPlanSubscription.findFirst({
     where: { 
-      id: planSubscriptionId, 
       ownerId: ownerId,
       status: { in: ['active', 'trialing'] },
       expiresAt: { gt: now }
@@ -37,8 +36,10 @@ const addTechnician = async (ownerId: string, payload: TAddTechnician) => {
   });
 
   if (!planSubscription) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Active and non-expired plan subscription not found');
+    throw new ApiError(httpStatus.PAYMENT_REQUIRED, 'No active or non-expired subscription found. Please buy a plan to add technicians.');
   }
+
+  const planSubscriptionId = planSubscription.id;
 
   // 3. Check Technician Limit for THIS specific plan
   const currentSlotCount = planSubscription.technicianIds.length;
