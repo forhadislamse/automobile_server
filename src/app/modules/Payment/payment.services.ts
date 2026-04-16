@@ -99,6 +99,15 @@ const createSubscriptionIntent = async (userId: string, planId: string, duration
     const isProfessional = plan.category === 'PROFESSIONAL';
     const isEligibleForTrial = !user.isTrialUsed && isProfessional;
 
+    // 3. Prevent Double Subscriptions
+    const existingSub = await prisma.userPlanSubscription.findFirst({
+        where: { ownerId: user.id, status: { in: ['active', 'trialing'] } },
+    });
+
+    if (existingSub) {
+        throw new ApiError(400, "You already have an active subscription. Please use the 'Change Plan' option to upgrade or modify your plan.");
+    }
+
     // --- PROCEED WITH STRIPE PAYMENT/TRIAL FLOW ---
     let customerId = user.stripeCustomerId;
     if (!customerId) {
@@ -185,11 +194,17 @@ const handleWebhook = async (payload: string, sig: string) => {
     let event;
 
     try {
-        event = stripe.webhooks.constructEvent(
-            payload,
-            sig,
-            config.stripe.webhook_secret as string
-        );
+        if (!sig && config.env === 'development') {
+            console.warn("Stripe signature missing. Bypassing verification for Postman testing in development.");
+            // In development, if no signature is provided, parse the payload directly
+            event = typeof payload === 'string' ? JSON.parse(payload) : payload;
+        } else {
+            event = stripe.webhooks.constructEvent(
+                payload,
+                sig,
+                config.stripe.webhook_secret as string
+            );
+        }
     } catch (err: any) {
         throw new Error(`Webhook Error: ${err.message}`);
     }
@@ -342,8 +357,11 @@ const handleWebhook = async (payload: string, sig: string) => {
                 }
             });
 
-            // Sync global user subscribed status
+            // Sync global user subscribed status and plan details
             const ownerUpId = subUpdated.metadata.userId;
+            const subUpPlanId = subUpdated.metadata.planId;
+            const subUpDuration = subUpdated.metadata.duration;
+
             const hasAccessSubs = await prisma.userPlanSubscription.count({
                 where: { ownerId: ownerUpId, status: { in: ['active', 'trialing'] } }
             });
@@ -352,10 +370,25 @@ const handleWebhook = async (payload: string, sig: string) => {
                 where: { id: ownerUpId },
                 data: { 
                     isSubscribed: hasAccessSubs > 0,
-                    subscriptionExpiresAt: subUpExpiresAt 
+                    subscriptionExpiresAt: subUpExpiresAt,
+                    ...(subUpPlanId && { planId: subUpPlanId })
+                }
+            });
+
+            // Sync UserPlanSubscription record
+            await prisma.userPlanSubscription.updateMany({
+                where: { stripeSubscriptionId: subUpId },
+                data: {
+                    status: subUpStatus as any,
+                    expiresAt: subUpExpiresAt,
+                    cancelAtPeriodEnd: subUpdated.cancel_at_period_end,
+                    autoRenew: !subUpdated.cancel_at_period_end,
+                    ...(subUpPlanId && { planId: subUpPlanId }),
+                    ...(subUpDuration && { duration: subUpDuration as any })
                 }
             });
             break;
+
 
         default:
             console.log(`Unhandled event type ${event.type}`);
@@ -532,6 +565,10 @@ const changeSubscriptionPlan = async (
         throw new ApiError(404, "Active or trialing subscription not found");
     }
 
+    if (currentSub.planId === newPlanId && currentSub.duration === newDuration) {
+        throw new ApiError(400, `You are already subscribed to the ${currentSub.plan.name} ${newDuration} plan.`);
+    }
+
     if (!currentSub.stripeSubscriptionId) {
         throw new ApiError(400, "This subscription is not managed by Stripe (e.g., Trial). Please purchase a new plan instead.");
     }
@@ -580,6 +617,7 @@ const changeSubscriptionPlan = async (
             price: newPriceId,
         }],
         proration_behavior: 'always_invoice', // Immediately charge/credit the difference
+        cancel_at_period_end: false, // Automatically resume renewal if they change plans
         metadata: {
             userId: userId,
             planId: newPlanId,
