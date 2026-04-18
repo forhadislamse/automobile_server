@@ -98,9 +98,15 @@ const addTechnician = async (ownerId: string, payload: TAddTechnician) => {
   // 6. Always Send Invitation Email (Owner might provide new passkey)
   const shopName = owner.shopName || 'Your Shop';
   const html = technicianInvitationTemplate(shopName, passkey);
-  await emailSender(email, html, `Invitation to join ${shopName} on SmartAutoTech.ai`);
+  await emailSender(email, html, `Invitation to join ${shopName} on SmartAutoTech`);
 
-  return technician;
+  // 7. Fetch updated limit info to include in response
+  const updatedLimitInfo = await getTechnicianLimitInfo(ownerId);
+
+  return {
+    technician,
+    limitInfo: updatedLimitInfo[0] || null // Return the primary active plan's limit info
+  };
 };
 
 const getShopTechnicians = async (ownerId: string) => {
