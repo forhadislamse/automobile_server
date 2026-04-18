@@ -662,11 +662,14 @@ const changeSubscriptionPlan = async (
 };
 
 const getMyPaymentHistory = async (userId: string) => {
-    // 1. Fetch all PAID payments for the user, ordered by date
+    // 1. Fetch all PAID payments or Trial payments (amount 0) for the user
     const payments = await prisma.payment.findMany({
         where: { 
             userId,
-            status: 'PAID'
+            OR: [
+                { status: 'PAID' },
+                { amount: 0 } 
+            ]
         },
         include: {
             plan: {
@@ -681,7 +684,7 @@ const getMyPaymentHistory = async (userId: string) => {
         }
     });
 
-    // 2. Map through payments and fetch invoice URLs from Stripe for the "Download" functionality
+    // 2. Map through payments and fetch invoice URLs
     const results = await Promise.all(payments.map(async (payment) => {
         let invoiceUrl = null;
         if (payment.invoiceId) {
@@ -695,14 +698,15 @@ const getMyPaymentHistory = async (userId: string) => {
 
         return {
             id: payment.id,
-            orderId: payment.id, // Direct ID for UI
+            orderId: payment.id,
             transactionId: payment.transactionId,
             date: payment.createdAt,
             planName: payment.plan?.name || "Unknown Plan",
             amount: payment.amount,
             status: payment.status,
             invoiceUrl: invoiceUrl,
-            duration: payment.duration
+            duration: payment.duration,
+            isTrial: payment.amount === 0
         };
     }));
 
