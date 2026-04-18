@@ -661,6 +661,54 @@ const changeSubscriptionPlan = async (
     };
 };
 
+const getMyPaymentHistory = async (userId: string) => {
+    // 1. Fetch all PAID payments for the user, ordered by date
+    const payments = await prisma.payment.findMany({
+        where: { 
+            userId,
+            status: 'PAID'
+        },
+        include: {
+            plan: {
+                select: {
+                    name: true,
+                    category: true
+                }
+            }
+        },
+        orderBy: {
+            createdAt: 'desc'
+        }
+    });
+
+    // 2. Map through payments and fetch invoice URLs from Stripe for the "Download" functionality
+    const results = await Promise.all(payments.map(async (payment) => {
+        let invoiceUrl = null;
+        if (payment.invoiceId) {
+            try {
+                const invoice = await stripe.invoices.retrieve(payment.invoiceId);
+                invoiceUrl = invoice.hosted_invoice_url || invoice.invoice_pdf || null;
+            } catch (err) {
+                console.error(`Failed to fetch invoice ${payment.invoiceId} from Stripe:`, err);
+            }
+        }
+
+        return {
+            id: payment.id,
+            orderId: payment.id, // Direct ID for UI
+            transactionId: payment.transactionId,
+            date: payment.createdAt,
+            planName: payment.plan?.name || "Unknown Plan",
+            amount: payment.amount,
+            status: payment.status,
+            invoiceUrl: invoiceUrl,
+            duration: payment.duration
+        };
+    }));
+
+    return results;
+};
+
 export const PaymentServices = {
     createSubscriptionIntent,
     handleWebhook,
@@ -668,5 +716,6 @@ export const PaymentServices = {
     cancelRenewal,
     resumeRenewal,
     getMySubscriptions,
-    changeSubscriptionPlan
+    changeSubscriptionPlan,
+    getMyPaymentHistory
 };

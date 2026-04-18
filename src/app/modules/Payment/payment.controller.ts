@@ -118,6 +118,18 @@ const changeSubscriptionPlan = catchAsync(async (req: Request, res: Response) =>
   });
 });
 
+const getMyPaymentHistory = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user.id;
+  const result = await PaymentServices.getMyPaymentHistory(userId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Payment history fetched successfully',
+    data: result,
+  });
+});
+
 export const PaymentController = {
   createSubscriptionIntent,
   handleWebhook,
@@ -125,5 +137,6 @@ export const PaymentController = {
   cancelRenewal,
   resumeRenewal,
   getMySubscriptions,
-  changeSubscriptionPlan
+  changeSubscriptionPlan,
+  getMyPaymentHistory
 };

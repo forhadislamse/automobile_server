@@ -9,6 +9,7 @@ router.post('/create-subscription-intent', auth(UserRole.USER), PaymentControlle
 router.post('/confirm-payment', auth(UserRole.USER), PaymentController.confirmPayment);
 
 router.get('/my-subscriptions', auth(UserRole.USER), PaymentController.getMySubscriptions);
+router.get('/my-payments', auth(UserRole.USER), PaymentController.getMyPaymentHistory);
 router.patch('/subscription/:subscriptionId/cancel-renewal', auth(UserRole.USER), PaymentController.cancelRenewal);
 router.patch('/subscription/:subscriptionId/resume-renewal', auth(UserRole.USER), PaymentController.resumeRenewal);
 router.post('/change-plan', auth(UserRole.USER), PaymentController.changeSubscriptionPlan);
