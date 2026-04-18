@@ -132,19 +132,15 @@ const getShopTechnicians = async (ownerId: string) => {
 };
 
 const updateTechnicianStatus = async (techId: string, ownerId: string, status: 'ACTIVE' | 'SUSPENDED' | 'BLOCKED') => {
-  console.log(`[DEBUG] Updating status for tech: ${techId}, owner: ${ownerId}, new status: ${status}`);
-  
   const technician = await prisma.user.findFirst({
     where: { id: techId, ownerId: ownerId }
   });
 
   if (!technician) {
-    console.log(`[DEBUG] Technician not found or ownership mismatch`);
     throw new ApiError(httpStatus.NOT_FOUND, "Technician not found or doesn't belong to your shop");
   }
 
   const oldStatus = technician.status;
-  console.log(`[DEBUG] Current status: ${oldStatus}`);
 
   // Handle Subscription Slot Management
   const planSubscription = await prisma.userPlanSubscription.findFirst({
@@ -156,12 +152,9 @@ const updateTechnicianStatus = async (techId: string, ownerId: string, status: '
     include: { plan: true }
   });
 
-  console.log(`[DEBUG] Plan Subscription Found: ${planSubscription?.id || 'None'}`);
-
   if (planSubscription) {
     // 1. Release Slot if moving TO Blocked
     if (status === 'BLOCKED' && oldStatus !== 'BLOCKED') {
-      console.log(`[DEBUG] Releasing slot for tech: ${techId}`);
       await prisma.userPlanSubscription.update({
         where: { id: planSubscription.id },
         data: {
@@ -233,12 +226,6 @@ const getTechnicianManagementStats = async (ownerId: string) => {
 
   const limitInfo = await getTechnicianLimitInfo(ownerId);
   const primaryPlan = limitInfo[0] || null;
-
-  // DEBUG LOG
-  const subscription = await prisma.userPlanSubscription.findFirst({
-    where: { ownerId: ownerId, status: { in: ['active', 'trialing'] } }
-  });
-  console.log(`[DEBUG] Current Technicians in Plan Array:`, subscription?.technicianIds);
 
   // Fetch all technicians for the table
   const technicians = await getShopTechnicians(ownerId);
