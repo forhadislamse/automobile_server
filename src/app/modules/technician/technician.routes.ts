@@ -23,6 +23,18 @@ router.get(
 );
 
 router.get(
+  '/management-stats',
+  auth(UserRole.USER),
+  TechnicianController.getTechnicianManagementStats
+);
+
+router.patch(
+  '/status/:id',
+  auth(UserRole.USER),
+  TechnicianController.updateTechnicianStatus
+);
+
+router.get(
   '/limit-info',
   auth(UserRole.USER),
   TechnicianController.getTechnicianLimitInfo

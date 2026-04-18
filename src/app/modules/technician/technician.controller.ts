@@ -28,6 +28,33 @@ const getShopTechnicians = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getTechnicianManagementStats = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user.id;
+  const result = await TechnicianServices.getTechnicianManagementStats(userId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Technician management stats fetched successfully',
+    data: result,
+  });
+});
+
+const updateTechnicianStatus = catchAsync(async (req: Request, res: Response) => {
+  const ownerId = req.user.id;
+  const { id } = req.params;
+  const { status } = req.body;
+
+  const result = await TechnicianServices.updateTechnicianStatus(id, ownerId, status);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: `Technician status updated to ${status} successfully`,
+    data: result,
+  });
+});
+
 const getTechnicianLimitInfo = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.id;
   const result = await TechnicianServices.getTechnicianLimitInfo(userId);
@@ -44,4 +71,6 @@ export const TechnicianController = {
   addTechnician,
   getShopTechnicians,
   getTechnicianLimitInfo,
+  getTechnicianManagementStats,
+  updateTechnicianStatus,
 };

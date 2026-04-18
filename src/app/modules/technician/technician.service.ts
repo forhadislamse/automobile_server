@@ -61,9 +61,10 @@ const addTechnician = async (ownerId: string, payload: TAddTechnician) => {
         email,
         fullName,
         password: hashedPassword,
+        passkey, // Plain text for owner
         role: UserRole.TECHNICIAN,
         ownerId: ownerId,
-        status: 'ACTIVE',
+        status: 'INVITED', // Initial status
         isVerifyEmail: true,
       },
     });
@@ -73,10 +74,13 @@ const addTechnician = async (ownerId: string, payload: TAddTechnician) => {
       throw new ApiError(httpStatus.FORBIDDEN, 'This technician email is already registered with another shop');
     }
 
-    // Update password if a existing technician is added again (owner might give new passkey)
+    // Update password and passkey if a existing technician is added again
     await prisma.user.update({
       where: { id: technician.id },
-      data: { password: hashedPassword }
+      data: { 
+        password: hashedPassword,
+        passkey: passkey // Update passkey
+      }
     });
   }
 
@@ -116,12 +120,82 @@ const getShopTechnicians = async (ownerId: string) => {
       id: true,
       fullName: true,
       email: true,
+      passkey: true,
       status: true,
+      totalSessions: true,
       createdAt: true,
     },
+    orderBy: { createdAt: 'desc' }
   });
 
   return technicians;
+};
+
+const updateTechnicianStatus = async (techId: string, ownerId: string, status: 'ACTIVE' | 'SUSPENDED' | 'BLOCKED') => {
+  const technician = await prisma.user.findFirst({
+    where: { id: techId, ownerId: ownerId }
+  });
+
+  if (!technician) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Technician not found or doesn't belong to your shop");
+  }
+
+  return await prisma.user.update({
+    where: { id: techId },
+    data: { status }
+  });
+};
+
+const getTechnicianManagementStats = async (ownerId: string) => {
+  const activeTechnicians = await prisma.user.count({
+    where: { 
+      ownerId: ownerId, 
+      status: 'ACTIVE', 
+      isDeleted: false 
+    }
+  });
+
+  // Calculate new technicians added this month (Active or Invited)
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+
+  const newThisMonth = await prisma.user.count({
+    where: {
+      ownerId: ownerId,
+      role: 'TECHNICIAN',
+      isDeleted: false,
+      status: 'ACTIVE',
+      createdAt: { gte: startOfMonth }
+    }
+  });
+
+  const invitationsSent = await prisma.user.count({
+    where: { ownerId: ownerId, status: 'INVITED', isDeleted: false }
+  });
+
+  const limitInfo = await getTechnicianLimitInfo(ownerId);
+  const primaryPlan = limitInfo[0] || null;
+
+  // Fetch all technicians for the table
+  const technicians = await getShopTechnicians(ownerId);
+
+  return {
+    activeTechnicians: {
+      count: activeTechnicians,
+      subtitle: `+${newThisMonth} this month`
+    },
+    activeInvitations: {
+      sent: invitationsSent,
+      remaining: primaryPlan?.remaining || 0,
+      label: "Remaining Invitations"
+    },
+    activePlan: {
+      name: primaryPlan?.planName || "No active plan",
+      nextRenewal: primaryPlan?.expiresAt || null
+    },
+    technicians
+  };
 };
 
 const getTechnicianLimitInfo = async (ownerId: string) => {
@@ -145,4 +219,6 @@ export const TechnicianServices = {
   addTechnician,
   getShopTechnicians,
   getTechnicianLimitInfo,
+  updateTechnicianStatus,
+  getTechnicianManagementStats,
 };

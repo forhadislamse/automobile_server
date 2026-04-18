@@ -115,6 +115,22 @@ const loginUser = async (payload: {
     throw new ApiError(httpStatus.BAD_REQUEST, "Password incorrect!");
   }
 
+  // Handle Account Status (Blocked/Suspended)
+  if (userData.status === "BLOCKED" || userData.status === "SUSPENDED") {
+    throw new ApiError(
+      httpStatus.FORBIDDEN,
+      `Your account is ${userData.status.toLowerCase()}. Please contact your shop owner.`
+    );
+  }
+
+  // Auto-activate technician on first login
+  if (userData.role === "TECHNICIAN" && userData.status === "INVITED") {
+    await prisma.user.update({
+      where: { id: userData.id },
+      data: { status: "ACTIVE" },
+    });
+  }
+
   if (payload.fcmToken) {
     await prisma.user.update({
       where: { id: userData.id },

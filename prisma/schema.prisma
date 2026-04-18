@@ -30,6 +30,8 @@ model User {
   isNotificationOn Boolean @default(false)
   isUserOnline     Boolean @default(false)
   fcmToken         String? @default("")
+  passkey          String? @default("")
+  totalSessions    Int     @default(0)
 
   accountLink           String?           @default("")
   stripeAccountUrl      String?           @default("")
@@ -103,6 +105,8 @@ enum UserStatus {
   ACTIVE
   INACTIVE
   BLOCKED
+  INVITED
+  SUSPENDED
 }
 
 enum Gender {
