@@ -132,14 +132,71 @@ const getShopTechnicians = async (ownerId: string) => {
 };
 
 const updateTechnicianStatus = async (techId: string, ownerId: string, status: 'ACTIVE' | 'SUSPENDED' | 'BLOCKED') => {
+  console.log(`[DEBUG] Updating status for tech: ${techId}, owner: ${ownerId}, new status: ${status}`);
+  
   const technician = await prisma.user.findFirst({
     where: { id: techId, ownerId: ownerId }
   });
 
   if (!technician) {
+    console.log(`[DEBUG] Technician not found or ownership mismatch`);
     throw new ApiError(httpStatus.NOT_FOUND, "Technician not found or doesn't belong to your shop");
   }
 
+  const oldStatus = technician.status;
+  console.log(`[DEBUG] Current status: ${oldStatus}`);
+
+  // Handle Subscription Slot Management
+  const planSubscription = await prisma.userPlanSubscription.findFirst({
+    where: { 
+      ownerId: ownerId,
+      status: { in: ['active', 'trialing'] },
+      expiresAt: { gt: new Date() }
+    },
+    include: { plan: true }
+  });
+
+  console.log(`[DEBUG] Plan Subscription Found: ${planSubscription?.id || 'None'}`);
+
+  if (planSubscription) {
+    // 1. Release Slot if moving TO Blocked
+    if (status === 'BLOCKED' && oldStatus !== 'BLOCKED') {
+      console.log(`[DEBUG] Releasing slot for tech: ${techId}`);
+      await prisma.userPlanSubscription.update({
+        where: { id: planSubscription.id },
+        data: {
+          technicianIds: {
+            set: planSubscription.technicianIds.filter(id => id !== techId)
+          }
+        }
+      });
+    }
+
+    // 2. Re-acquire Slot if moving FROM Blocked TO Active
+    if (status === 'ACTIVE' && oldStatus === 'BLOCKED') {
+      const currentSlotCount = planSubscription.technicianIds.length;
+      if (currentSlotCount >= planSubscription.plan.technicianLimit) {
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          `Cannot reactivate. Your plan (${planSubscription.plan.name}) is full. Please revoke another technician first.`
+        );
+      }
+
+      // Add back to slot array if not already there
+      if (!planSubscription.technicianIds.includes(techId)) {
+        await prisma.userPlanSubscription.update({
+          where: { id: planSubscription.id },
+          data: {
+            technicianIds: {
+              push: techId
+            }
+          }
+        });
+      }
+    }
+  }
+
+  // Update Technician Status
   return await prisma.user.update({
     where: { id: techId },
     data: { status }
@@ -176,6 +233,12 @@ const getTechnicianManagementStats = async (ownerId: string) => {
 
   const limitInfo = await getTechnicianLimitInfo(ownerId);
   const primaryPlan = limitInfo[0] || null;
+
+  // DEBUG LOG
+  const subscription = await prisma.userPlanSubscription.findFirst({
+    where: { ownerId: ownerId, status: { in: ['active', 'trialing'] } }
+  });
+  console.log(`[DEBUG] Current Technicians in Plan Array:`, subscription?.technicianIds);
 
   // Fetch all technicians for the table
   const technicians = await getShopTechnicians(ownerId);
