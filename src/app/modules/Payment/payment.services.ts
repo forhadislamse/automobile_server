@@ -5,7 +5,7 @@ import ApiError from '../../../errors/ApiErrors';
 import httpStatus from 'http-status';
 
 const stripe = new Stripe(config.stripe.secret_key as string, {
-    apiVersion: '2024-06-20' as any,
+    apiVersion: '2025-07-30.basil' as any,
 });
 
 /**
