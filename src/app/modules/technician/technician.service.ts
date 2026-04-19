@@ -1,6 +1,7 @@
 import { User, UserRole } from '@prisma/client';
 import httpStatus from 'http-status';
 import * as bcrypt from 'bcrypt';
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, format } from 'date-fns';
 import prisma from '../../../shared/prisma';
 import ApiError from '../../../errors/ApiErrors';
 import emailSender from '../../../shared/emailSender';
@@ -265,10 +266,148 @@ const getTechnicianLimitInfo = async (ownerId: string) => {
   }));
 };
 
+const createDiagnostic = async (technicianId: string, ownerId: string, payload: { persona: string }) => {
+  let finalOwnerId = ownerId;
+
+  // If the one creating is a technician, we should ensure we have the correct ownerId
+  if (!ownerId || technicianId === ownerId) {
+     const tech = await prisma.user.findUnique({
+       where: { id: technicianId },
+       select: { ownerId: true, role: true }
+     });
+     
+     if (tech?.role === UserRole.TECHNICIAN) {
+       finalOwnerId = tech.ownerId as string;
+     } else {
+       finalOwnerId = technicianId; // It's an owner
+     }
+  }
+
+  // 1. Create Diagnostic Record
+  const diagnostic = await prisma.diagnostic.create({
+    data: {
+      technicianId,
+      ownerId: finalOwnerId,
+      persona: payload.persona
+    }
+  });
+
+  // 2. Increment totalSessions in User model
+  await prisma.user.update({
+    where: { id: technicianId },
+    data: {
+      totalSessions: { increment: 1 }
+    }
+  });
+
+  return diagnostic;
+};
+
+const getShopOwnerDashboard = async (ownerId: string) => {
+  const now = new Date();
+  
+  // 1. Get Top Card Stats (Reuse existing logic)
+  const managementStats = await getTechnicianManagementStats(ownerId);
+
+  // 2. Diagnostics Activity (Current Week: Sun - Sat)
+  const sun = startOfWeek(now, { weekStartsOn: 0 });
+  const sat = endOfWeek(now, { weekStartsOn: 0 });
+
+  const diagnosticsThisWeek = await prisma.diagnostic.findMany({
+    where: {
+      ownerId,
+      createdAt: { gte: sun, lte: sat }
+    }
+  });
+
+  const weekInterval = eachDayOfInterval({ start: sun, end: sat });
+  const diagnosticsActivity = weekInterval.map((day) => {
+    const dayLabel = format(day, 'EEE'); // Sun, Mon...
+    const count = diagnosticsThisWeek.filter((d) => 
+      format(d.createdAt, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
+    ).length;
+
+    return { day: dayLabel, sessions: count };
+  });
+
+  // 3. Technician Performance (Current Month)
+  const monthStart = startOfMonth(now);
+  const monthEnd = endOfMonth(now);
+
+  const monthDiagnostics = await prisma.diagnostic.findMany({
+    where: {
+      ownerId,
+      createdAt: { gte: monthStart, lte: monthEnd }
+    },
+    include: {
+      technician: {
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          profileImage: true
+        }
+      }
+    }
+  });
+
+  // Aggregate by technician
+  const performanceMap: Record<string, any> = {};
+  monthDiagnostics.forEach((d) => {
+    const techId = d.technicianId;
+    if (!performanceMap[techId]) {
+      performanceMap[techId] = {
+        id: techId,
+        fullName: d.technician.fullName,
+        email: d.technician.email,
+        profileImage: d.technician.profileImage,
+        sessions: 0
+      };
+    }
+    performanceMap[techId].sessions += 1;
+  });
+
+  const technicianPerformance = Object.values(performanceMap);
+  const totalMonthlySessions = monthDiagnostics.length;
+
+  // 4. Recent Billing (Last 3 Payments)
+  const recentBilling = await prisma.payment.findMany({
+    where: {
+      userId: ownerId,
+      status: 'PAID'
+    },
+    include: {
+      plan: {
+        select: { name: true }
+      }
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 3
+  });
+
+  return {
+    ...managementStats,
+    diagnosticsActivity,
+    technicianPerformance: {
+      total: totalMonthlySessions,
+      data: technicianPerformance
+    },
+    recentBilling: recentBilling.map(p => ({
+      orderId: `INV-${p.id.slice(-4).toUpperCase()}`, // Masking ID for visual consistency
+      date: p.createdAt,
+      planName: p.plan?.name || "Unknown Plan",
+      amount: p.amount,
+      status: p.status
+    }))
+  };
+};
+
 export const TechnicianServices = {
   addTechnician,
   getShopTechnicians,
   getTechnicianLimitInfo,
   updateTechnicianStatus,
   getTechnicianManagementStats,
+  createDiagnostic,
+  getShopOwnerDashboard,
 };
