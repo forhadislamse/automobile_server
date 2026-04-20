@@ -130,6 +130,31 @@ const getMyPaymentHistory = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getLatestPayment = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user.id;
+  const result = await PaymentServices.getLatestPayment(userId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Latest payment record fetched successfully',
+    data: result,
+  });
+});
+
+const getPaymentById = catchAsync(async (req: Request, res: Response) => {
+  const { paymentId } = req.params;
+  const userId = req.user.id;
+  const result = await PaymentServices.getPaymentById(paymentId, userId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Payment record fetched successfully',
+    data: result,
+  });
+});
+
 export const PaymentController = {
   createSubscriptionIntent,
   handleWebhook,
@@ -138,5 +163,7 @@ export const PaymentController = {
   resumeRenewal,
   getMySubscriptions,
   changeSubscriptionPlan,
-  getMyPaymentHistory
+  getMyPaymentHistory,
+  getLatestPayment,
+  getPaymentById
 };

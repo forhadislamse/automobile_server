@@ -713,6 +713,38 @@ const getMyPaymentHistory = async (userId: string) => {
     return results;
 };
 
+const getLatestPayment = async (userId: string) => {
+    const payment = await prisma.payment.findFirst({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        include: { plan: true }
+    });
+
+    if (!payment) {
+        throw new ApiError(404, 'No payment record found for this user');
+    }
+
+    return payment;
+};
+
+const getPaymentById = async (paymentId: string, userId: string) => {
+    const payment = await prisma.payment.findUnique({
+        where: { id: paymentId },
+        include: { plan: true }
+    });
+
+    if (!payment) {
+        throw new ApiError(404, 'Payment record not found');
+    }
+
+    // Security Check: Ensure the payment belongs to the requesting user
+    if (payment.userId !== userId) {
+        throw new ApiError(403, 'You do not have permission to view this payment record');
+    }
+
+    return payment;
+};
+
 export const PaymentServices = {
     createSubscriptionIntent,
     handleWebhook,
@@ -721,5 +753,7 @@ export const PaymentServices = {
     resumeRenewal,
     getMySubscriptions,
     changeSubscriptionPlan,
-    getMyPaymentHistory
+    getMyPaymentHistory,
+    getLatestPayment,
+    getPaymentById
 };
