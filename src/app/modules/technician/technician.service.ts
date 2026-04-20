@@ -353,7 +353,7 @@ const getShopOwnerDashboard = async (ownerId: string) => {
 
   // Aggregate by technician
   const performanceMap: Record<string, any> = {};
-  monthDiagnostics.forEach((d) => {
+  monthDiagnostics.forEach((d: any) => {
     const techId = d.technicianId;
     if (!performanceMap[techId]) {
       performanceMap[techId] = {
