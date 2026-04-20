@@ -51,3 +51,27 @@ export const validateAIToolAccess = async (userId: string, requestedTool: AITool
 
   return planSubscription;
 };
+
+/**
+ * Placeholder for real AI API call (OpenAI, Anthropic, etc.)
+ */
+export const callAI = async (systemPrompt: string, userPrompt: string) => {
+    const apiKey = process.env.OPENAI_API_KEY;
+
+    if (!apiKey) {
+        console.warn("OPENAI_API_KEY not found. Returning simulated response.");
+        // Simulated delay to mimic network latency
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        return `[SIMULATED DIAGNOSTIC]
+Analysis of: "${userPrompt}"
+Potential Cause: Based on typical patterns, this issue often stems from intermittent signal loss in the primary sensor circuit.
+Recommended Action: Inspect the wiring harness for signs of wear or corrosion. Test the sensor output voltage using a multimeter to ensure it's within factory specifications.
+Priority: Medium`;
+    }
+
+    // Real implementation would use:
+    // const openai = new OpenAI({ apiKey });
+    // const completion = await openai.chat.completions.create({ ... });
+    return `AI response for: ${userPrompt}`;
+};

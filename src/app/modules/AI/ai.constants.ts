@@ -12,20 +12,20 @@ export const AI_TOOLS = {
 export type AIToolType = (typeof AI_TOOLS)[keyof typeof AI_TOOLS];
 
 // Mapping AI Tools to Plan Categories
-export const AI_ACCESS_MAP: Record<PlanCategory, AIToolType[]> = {
-  [PlanCategory.BASIC]: [
+export const AI_ACCESS_MAP: Record<string, AIToolType[]> = {
+  BASIC: [
     AI_TOOLS.SHOP_FOREMAN,
     AI_TOOLS.MECHANICAL_DIAGNOSTICS,
     AI_TOOLS.OBD2_INTERPRETER,
   ],
-  [PlanCategory.PROFESSIONAL]: [
+  PROFESSIONAL: [
     AI_TOOLS.SHOP_FOREMAN,
     AI_TOOLS.MECHANICAL_DIAGNOSTICS,
     AI_TOOLS.OBD2_INTERPRETER,
     AI_TOOLS.ELECTRICAL_DIAGNOSTICS,
     AI_TOOLS.TRANSMISSION_DIAGNOSTICS,
   ],
-  [PlanCategory.EUROPEAN]: [
+  EUROPEAN: [
     AI_TOOLS.SHOP_FOREMAN,
     AI_TOOLS.MECHANICAL_DIAGNOSTICS,
     AI_TOOLS.OBD2_INTERPRETER,
@@ -34,3 +34,10 @@ export const AI_ACCESS_MAP: Record<PlanCategory, AIToolType[]> = {
     AI_TOOLS.EUROPEAN_SPECIALIST,
   ],
 };
+
+export const EUROPEAN_BRANDS = [
+  'BMW', 'Mercedes-Benz', 'Mercedes', 'Audi', 'Porsche', 'Volkswagen', 'VW', 
+  'Volvo', 'Land Rover', 'Jaguar', 'Ferrari', 'Lamborghini', 'Fiat', 
+  'Alfa Romeo', 'Peugeot', 'Renault', 'Citroen', 'Skoda', 'SEAT', 'Saab', 
+  'Mini Cooper', 'Mini', 'Bentley', 'Rolls-Royce', 'Aston Martin', 'Maserati'
+];

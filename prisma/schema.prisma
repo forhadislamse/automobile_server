@@ -42,6 +42,7 @@ model User {
   plan                  SubscriptionPlan? @relation(fields: [planId], references: [id])
   subscriptionExpiresAt DateTime?
   isTrialUsed           Boolean           @default(false)
+  chatSessions          ChatSession[]
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
 
@@ -221,4 +222,29 @@ model Payment {
   updatedAt      DateTime         @updatedAt
 
   @@map("payments")
+}
+
+model ChatSession {
+  id           String        @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String        @db.ObjectId // The user (technician or owner) who started the chat
+  user         User          @relation(fields: [userId], references: [id])
+  ownerId      String        @db.ObjectId // The shop owner who owns this data
+  persona      String        // Which AI tool (Shop Foreman AI, Mechanical, etc.)
+  title        String?       // Auto-generated title for the chat
+  messages     ChatMessage[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id        String      @id @default(auto()) @map("_id") @db.ObjectId
+  sessionId String      @db.ObjectId
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role      String      // 'user' or 'assistant'
+  content   String      // The message text
+  createdAt DateTime    @default(now())
+
+  @@map("chat_messages")
 }

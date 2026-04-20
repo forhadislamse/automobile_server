@@ -41,4 +41,29 @@ router.post(
   AIController.europeanSpecialistAI
 );
 
+// Chat Session Management
+router.post(
+  '/sessions',
+  auth(UserRole.USER, UserRole.TECHNICIAN),
+  AIController.startNewChat
+);
+
+router.post(
+  '/sessions/message',
+  auth(UserRole.USER, UserRole.TECHNICIAN),
+  AIController.sendMessage
+);
+
+router.get(
+  '/sessions',
+  auth(UserRole.USER, UserRole.TECHNICIAN),
+  AIController.getMyChatSessions
+);
+
+router.get(
+  '/sessions/:sessionId/messages',
+  auth(UserRole.USER, UserRole.TECHNICIAN),
+  AIController.getChatMessages
+);
+
 export const AIRoutes = router;

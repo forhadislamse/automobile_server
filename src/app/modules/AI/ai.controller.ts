@@ -65,11 +65,64 @@ const europeanSpecialistAI = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const startNewChat = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user.id;
+  const ownerId = req.user.ownerId || userId;
+  const result = await AIServices.startNewChat(userId, ownerId, req.body);
+  
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: 'Chat session started successfully',
+    data: result,
+  });
+});
+
+const sendMessage = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user.id;
+  const result = await AIServices.sendMessage(userId, req.body);
+  
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Message sent and response received',
+    data: result,
+  });
+});
+
+const getMyChatSessions = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user.id;
+  const result = await AIServices.getMyChatSessions(userId);
+  
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Chat sessions fetched successfully',
+    data: result,
+  });
+});
+
+const getChatMessages = catchAsync(async (req: Request, res: Response) => {
+  const { sessionId } = req.params;
+  const result = await AIServices.getChatMessages(sessionId);
+  
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Chat messages fetched successfully',
+    data: result,
+  });
+});
+
 export const AIController = {
   shopForemanAI,
   mechanicalDiagnosticsAI,
   obd2InterpreterAI,
   electricalDiagnosticsAI,
   transmissionDiagnosticsAI,
-  europeanSpecialistAI
+  europeanSpecialistAI,
+  startNewChat,
+  sendMessage,
+  getMyChatSessions,
+  getChatMessages
 };
