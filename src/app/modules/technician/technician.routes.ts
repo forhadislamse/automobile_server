@@ -35,9 +35,20 @@ router.patch(
 );
 
 router.get(
+  '/dashboard',
+  auth(UserRole.USER),
+  TechnicianController.getShopOwnerDashboard
+);
+router.get(
   '/limit-info',
   auth(UserRole.USER),
   TechnicianController.getTechnicianLimitInfo
+);
+
+router.post(
+  '/create-diagnostic',
+  auth(UserRole.USER, UserRole.TECHNICIAN),
+  TechnicianController.createDiagnostic
 );
 
 export const TechnicianRoutes = router;
