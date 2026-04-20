@@ -4,8 +4,13 @@ import prisma from '../../../shared/prisma';
 import ApiError from '../../../errors/ApiErrors';
 import httpStatus from 'http-status';
 
+// const stripe = new Stripe(config.stripe.secret_key as string, {
+//     apiVersion: '2025-07-30.basil   as any,
+// });
+
+
 const stripe = new Stripe(config.stripe.secret_key as string, {
-    apiVersion: '2025-07-30.basil' as any,
+    apiVersion: '2024-06-20' as any,
 });
 
 /**
@@ -143,7 +148,7 @@ const createSubscriptionIntent = async (userId: string, planId: string, duration
             payment_behavior: 'default_incomplete',
             payment_settings: { save_default_payment_method: 'on_subscription' },
             trial_period_days: isEligibleForTrial ? 14 : undefined,
-            expand: ['latest_invoice.payment_intent', 'pending_setup_intent'],
+            expand: ['latest_invoice', 'latest_invoice.payment_intent', 'pending_setup_intent'],
             metadata: {
                 userId: user.id,
                 planId: plan.id,
@@ -158,12 +163,24 @@ const createSubscriptionIntent = async (userId: string, planId: string, duration
     }
 
     const invoice = subscription.latest_invoice as Stripe.Invoice;
-    const paymentIntent = invoice.payment_intent as Stripe.PaymentIntent;
+    const paymentIntent = invoice?.payment_intent as Stripe.PaymentIntent;
     const setupIntent = subscription.pending_setup_intent as Stripe.SetupIntent;
 
-    // For trials, there might not be a payment intent immediately since it's $0
-    // In that case, we use the setup_intent to collect the card details
+    // For trials: Stripe uses SetupIntent (no charge), for paid plans: PaymentIntent
     const clientSecret = paymentIntent?.client_secret || setupIntent?.client_secret || null;
+
+    console.log("Stripe Intent Debug:", {
+        invoiceId: invoice?.id,
+        paymentIntentId: paymentIntent?.id,
+        setupIntentId: setupIntent?.id,
+        hasClientSecret: !!clientSecret,
+        subscriptionStatus: subscription.status
+    });
+
+    if (!clientSecret) {
+        console.error("CRITICAL: clientSecret is NULL. Invoice ID:", invoice?.id);
+    }
+
 
     // 7. Create NEW Payment record in DB with duration tracking
     const paymentRecord = await prisma.payment.create({
@@ -173,8 +190,8 @@ const createSubscriptionIntent = async (userId: string, planId: string, duration
             amount: isEligibleForTrial ? 0 : priceOption.price,
             duration: duration,
             status: 'PENDING',
-            transactionId: paymentIntent?.id || `SUB_${subscription.id}`,
-            invoiceId: invoice.id as string,
+            transactionId: paymentIntent?.id || setupIntent?.id || `SUB_${subscription.id}`,
+            invoiceId: invoice?.id || null,
             subscriptionId: subscription.id
         }
     });
