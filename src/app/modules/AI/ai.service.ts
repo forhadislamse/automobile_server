@@ -53,15 +53,24 @@ const processAIRequest = async (userId: string, toolType: AIToolType, prompt: st
   };
 };
 
-const startNewChat = async (userId: string, ownerId: string, payload: { persona: string, prompt: string, image?: string }) => {
+const startNewChat = async (userId: string, ownerId: string, payload: { persona: string, prompt?: string, image?: string }) => {
   // 1. Validate Access
   const subscription = await validateAIToolAccess(userId, payload.persona as AIToolType);
   const planName = subscription.plan.name;
   const allowedTools = AI_ACCESS_MAP[subscription.plan.category];
 
-  // 2. Generate a concise AI Title for the session
-  const titleSystemPrompt = `You are a helpful assistant. Summarize the user's vehicle diagnostic request into a 3-5 word professional chat title. Output ONLY the title text. Example: "BMW Brake Sensor Issue" or "Engine Noise Analysis".`;
-  const aiTitle = await callAI(titleSystemPrompt, payload.prompt);
+  if (!payload.prompt && !payload.image) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Please provide either a prompt or an image');
+  }
+
+  const finalPrompt = payload.prompt || "Please analyze this vehicle image and provide diagnostic feedback.";
+  let aiTitle = "Image Diagnostic Session";
+
+  // 2. Generate a concise AI Title for the session if prompt exists
+  if (payload.prompt) {
+    const titleSystemPrompt = `You are a helpful assistant. Summarize the user's vehicle diagnostic request into a 3-5 word professional chat title. Output ONLY the title text. Example: "BMW Brake Sensor Issue" or "Engine Noise Analysis".`;
+    aiTitle = await callAI(titleSystemPrompt, payload.prompt);
+  }
 
   // 3. Create the session
   const session = await prisma.chatSession.create({
@@ -87,7 +96,7 @@ const startNewChat = async (userId: string, ownerId: string, payload: { persona:
     data: {
       sessionId: session.id,
       role: 'user',
-      content: payload.prompt,
+      content: payload.prompt ? payload.prompt : "[Image Shared]",
       image: payload.image
     }
   });
@@ -104,7 +113,7 @@ const startNewChat = async (userId: string, ownerId: string, payload: { persona:
   `.trim();
 
   // 6. Get AI Response
-  const resultText = await callAI(systemPrompt, payload.prompt, payload.image);
+  const resultText = await callAI(systemPrompt, finalPrompt, payload.image);
 
   // 7. Save AI response message
   const assistantMessage = await prisma.chatMessage.create({
@@ -118,7 +127,12 @@ const startNewChat = async (userId: string, ownerId: string, payload: { persona:
   return { session, assistantMessage };
 };
 
-const sendMessage = async (userId: string, payload: { sessionId: string, prompt: string, image?: string }) => {
+const sendMessage = async (userId: string, payload: { sessionId: string, prompt?: string, image?: string }) => {
+  // 1. Validate that at least one input is provided
+  if (!payload.prompt && !payload.image) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Please provide either a prompt or an image');
+  }
+
   const session = await prisma.chatSession.findUnique({
     where: { id: payload.sessionId }
   });
@@ -127,12 +141,14 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt:
     throw new ApiError(httpStatus.NOT_FOUND, 'Chat session not found');
   }
 
+  const finalPrompt = payload.prompt || "Please analyze this image and provide diagnostic feedback.";
+
   // 1. Save user message
   await prisma.chatMessage.create({
     data: {
       sessionId: session.id,
       role: 'user',
-      content: payload.prompt,
+      content: payload.prompt ? payload.prompt : "[Image Shared]",
       image: payload.image
     }
   });
@@ -153,7 +169,7 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt:
   `.trim();
 
   // 4. Get AI Response
-  const resultText = await callAI(systemPrompt, payload.prompt, payload.image);
+  const resultText = await callAI(systemPrompt, finalPrompt, payload.image);
 
   // 5. Save assistant message
   const assistantMessage = await prisma.chatMessage.create({

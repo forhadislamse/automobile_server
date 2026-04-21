@@ -1,5 +1,6 @@
 import { UserRole } from '@prisma/client';
 import httpStatus from 'http-status';
+import OpenAI from 'openai';
 import prisma from '../../../shared/prisma';
 import ApiError from '../../../errors/ApiErrors';
 import { AI_ACCESS_MAP, AIToolType } from './ai.constants';
@@ -52,93 +53,55 @@ export const validateAIToolAccess = async (userId: string, requestedTool: AITool
   return planSubscription;
 };
 
-// import OpenAI from 'openai';
-// import { GoogleGenerativeAI } from '@google/generative-ai';
-
 /**
- * Placeholder for real AI API call (OpenAI, Anthropic, etc.)
- * Updated to support both OpenAI (GPT-4o) and Google Gemini (1.5 Flash)
+ * Helper to call OpenAI API for diagnostics.
+ * If OPENAI_API_KEY is not provided, returns a simulated response for development.
  */
 export const callAI = async (systemPrompt: string, userPrompt: string, imageUrl?: string) => {
-  const openAIKey = process.env.OPENAI_API_KEY;
-  const geminiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.OPENAI_API_KEY;
 
-  /* 
-  // OPTION 1: GOOGLE GEMINI INTEGRATION (Recommended for Free Tier)
-  if (geminiKey) {
-    try {
-      const genAI = new GoogleGenerativeAI(geminiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-      const parts: any[] = [{ text: `SYSTEM: ${systemPrompt}\n\nUSER: ${userPrompt}` }];
-      
-      // If image is provided, you would need to fetch it and convert to base64 for Gemini
-      // This is a placeholder for that logic
-      if (imageUrl) {
-         // Logic to fetch image and add as inlineData part
-      }
-
-      const result = await model.generateContent(parts);
-      return result.response.text();
-    } catch (error: any) {
-      console.error("Gemini API Error:", error);
+    if (!apiKey) {
+        console.warn("OPENAI_API_KEY not found in .env. Returning simulated response.");
+        // Simulated delay to mimic network latency
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        return `[SIMULATED DIAGNOSTIC]
+Analysis of: "${userPrompt}" ${imageUrl ? "(Image analysis included)" : ""}
+Potential Cause: Based on typical patterns, this issue often stems from intermittent signal loss in the primary sensor circuit.
+Recommended Action: Inspect the wiring harness for signs of wear or corrosion. Test the sensor output voltage using a multimeter to ensure it's within factory specifications.
+Priority: Medium`;
     }
-  }
-  */
 
-  /* 
-  // OPTION 2: REAL OPENAI INTEGRATION
-  if (openAIKey) {
     try {
-      const openai = new OpenAI({ apiKey: openAIKey });
-      
-      const messages: any[] = [
-        { role: 'system', content: systemPrompt },
-        {
-          role: 'user',
-          content: [
-            { type: 'text', text: userPrompt },
-          ],
-        },
-      ];
-
-      if (imageUrl) {
-        messages[1].content.push({
-          type: 'image_url',
-          image_url: { url: imageUrl },
+        const openai = new OpenAI({
+            apiKey: apiKey,
         });
-      }
 
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages,
-        temperature: 0.7,
-      });
+        const modelName = process.env.AI_MODEL_NAME || "gpt-4o-mini";
 
-      return response.choices[0].message.content;
+        // Build the message content for OpenAI
+        const userContent: any[] = [{ type: "text", text: userPrompt }];
+        
+        if (imageUrl) {
+            userContent.push({
+                type: "image_url",
+                image_url: { url: imageUrl }
+            });
+        }
+
+        const response = await openai.chat.completions.create({
+            model: modelName,
+            messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userContent }
+            ],
+            temperature: 0.7,
+            max_tokens: 1200,
+        });
+
+        return response.choices[0].message.content || "No response from AI.";
     } catch (error: any) {
-      console.error("OpenAI API Error:", error);
+        console.error("OpenAI API Error:", error.message);
+        return `AI Service Error: ${error.message}. Please check your API configuration.`;
     }
-  }
-  */
-
-  // FALLBACK / SIMULATED RESPONSE
-  console.warn("Using simulated response (OPENAI_API_KEY not active or code commented).");
-  
-  // Simulated delay to mimic network latency
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  
-  let simulatedIcon = "🚗";
-  if (imageUrl) simulatedIcon = "📸";
-
-  return `${simulatedIcon} **Diagnostic Analysis**
-  
-  🔍 **Identified Issue:** Based on your description ${imageUrl ? "and the provided image" : ""}, there appears to be a potential fault in the primary circuit.
-  
-  🛠️ **How to Solve:**
-  1. Inspect the wiring harness for any visible damage.
-  2. Use a diagnostic scanner to check for pending trouble codes.
-  3. Verify the sensor voltage remains within 0.5V - 4.5V range.
-  
-  ⚠️ **Note:** Please upgrade your plan for more detailed, specialized expert analysis.`;
 };
