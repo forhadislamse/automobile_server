@@ -54,8 +54,19 @@ const processAIRequest = async (userId: string, toolType: AIToolType, prompt: st
 };
 
 const startNewChat = async (userId: string, ownerId: string, payload: { persona: string, prompt?: string, image?: string }) => {
-  // 1. Validate Access
-  const subscription = await validateAIToolAccess(userId, payload.persona as AIToolType);
+  // 1. Detect if it's a European Vehicle for automatic routing
+  let effectivePersona = payload.persona;
+  const isEuropeanBrand = payload.prompt ? EUROPEAN_BRANDS.some(brand => 
+    payload.prompt?.toLowerCase().includes(brand.toLowerCase())
+  ) : false;
+
+  if (isEuropeanBrand && payload.persona !== AI_TOOLS.EUROPEAN_SPECIALIST) {
+    console.log(`[AI ROUTING] European brand detected in New Chat. Routing to European Specialist.`);
+    effectivePersona = AI_TOOLS.EUROPEAN_SPECIALIST;
+  }
+
+  // 2. Validate Access for the effective persona
+  const subscription = await validateAIToolAccess(userId, effectivePersona as AIToolType);
   const planName = subscription.plan.name;
   const allowedTools = AI_ACCESS_MAP[subscription.plan.category];
 
@@ -66,32 +77,32 @@ const startNewChat = async (userId: string, ownerId: string, payload: { persona:
   const finalPrompt = payload.prompt || "Please analyze this vehicle image and provide diagnostic feedback.";
   let aiTitle = "Image Diagnostic Session";
 
-  // 2. Generate a concise AI Title for the session if prompt exists
+  // 3. Generate a concise AI Title for the session if prompt exists
   if (payload.prompt) {
     const titleSystemPrompt = `You are a helpful assistant. Summarize the user's vehicle diagnostic request into a 3-5 word professional chat title. Output ONLY the title text. Example: "BMW Brake Sensor Issue" or "Engine Noise Analysis".`;
     aiTitle = await callAI(titleSystemPrompt, payload.prompt);
   }
 
-  // 3. Create the session
+  // 4. Create the session
   const session = await prisma.chatSession.create({
     data: {
       userId,
       ownerId,
-      persona: payload.persona,
+      persona: effectivePersona,
       title: aiTitle.length > 50 ? aiTitle.substring(0, 47) + '...' : aiTitle
     }
   });
 
-  // 3. Create a Diagnostic record (for dashboard stats)
+  // 5. Create a Diagnostic record (for dashboard stats)
   await prisma.diagnostic.create({
     data: {
       technicianId: userId,
       ownerId: ownerId,
-      persona: payload.persona
+      persona: effectivePersona
     }
   });
 
-  // 4. Save the initial user message (including image if present)
+  // 6. Save the initial user message (including image if present)
   await prisma.chatMessage.create({
     data: {
       sessionId: session.id,
@@ -101,21 +112,22 @@ const startNewChat = async (userId: string, ownerId: string, payload: { persona:
     }
   });
 
-  // 5. Generate System Prompt
+  // 7. Generate System Prompt
   const toolNames = allowedTools.join(', ');
   const systemPrompt = `
-    You are ${payload.persona}, the central AI assistant for an automotive repair shop. 
+    You are ${effectivePersona}, the central AI assistant for an automotive repair shop. 
     The current shop is on the "${planName}". 
     The specialized AI tools available for this plan are: ${toolNames}.
+    ${isEuropeanBrand ? 'Note: A European vehicle has been identified. Apply specialized European diagnostic knowledge.' : ''}
     Always use helpful icons/emojis in your response. 
     If a vehicle image is analyzed, provide specific visual feedback.
     Always provide clear "How to Solve" steps.
   `.trim();
 
-  // 6. Get AI Response
+  // 8. Get AI Response
   const resultText = await callAI(systemPrompt, finalPrompt, payload.image);
 
-  // 7. Save AI response message
+  // 9. Save AI response message
   const assistantMessage = await prisma.chatMessage.create({
     data: {
       sessionId: session.id,
@@ -141,9 +153,26 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt?
     throw new ApiError(httpStatus.NOT_FOUND, 'Chat session not found');
   }
 
+  // 2. Detect if it's a European Vehicle for automatic routing
+  let currentPersona = session.persona;
+  const isEuropeanBrand = payload.prompt ? EUROPEAN_BRANDS.some(brand => 
+    payload.prompt?.toLowerCase().includes(brand.toLowerCase())
+  ) : false;
+
+  if (isEuropeanBrand && session.persona !== AI_TOOLS.EUROPEAN_SPECIALIST) {
+    console.log(`[AI ROUTING] European brand detected in message. Routing to European Specialist.`);
+    currentPersona = AI_TOOLS.EUROPEAN_SPECIALIST;
+    
+    // Update session persona to European Specialist for future messages
+    await prisma.chatSession.update({
+      where: { id: session.id },
+      data: { persona: AI_TOOLS.EUROPEAN_SPECIALIST }
+    });
+  }
+
   const finalPrompt = payload.prompt || "Please analyze this image and provide diagnostic feedback.";
 
-  // 1. Save user message
+  // 3. Save user message
   await prisma.chatMessage.create({
     data: {
       sessionId: session.id,
@@ -153,17 +182,18 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt?
     }
   });
 
-  // 2. Validate Access for the persona in this session
-  const subscription = await validateAIToolAccess(userId, session.persona as AIToolType);
+  // 4. Validate Access for the persona in this session
+  const subscription = await validateAIToolAccess(userId, currentPersona as AIToolType);
   const planName = subscription.plan.name;
   const allowedTools = AI_ACCESS_MAP[subscription.plan.category];
 
   // 3. Generate System Prompt
   const toolNames = allowedTools.join(', ');
   const systemPrompt = `
-    You are ${session.persona}, the central AI assistant for an automotive repair shop. 
+    You are ${currentPersona}, the central AI assistant for an automotive repair shop. 
     The current shop is on the "${planName}". 
     The specialized AI tools available for this plan are: ${toolNames}.
+    ${isEuropeanBrand ? 'Note: A European vehicle has been identified. Apply specialized European diagnostic knowledge.' : ''}
     Always use helpful icons/emojis in your response.
     Always provide clear "How to Solve" steps.
   `.trim();
