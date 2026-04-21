@@ -244,6 +244,7 @@ model ChatMessage {
   session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   role      String      // 'user' or 'assistant'
   content   String      // The message text
+  image     String?     // URL for uploaded image
   createdAt DateTime    @default(now())
 
   @@map("chat_messages")

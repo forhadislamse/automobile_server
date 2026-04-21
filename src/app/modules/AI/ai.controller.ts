@@ -92,7 +92,8 @@ const sendMessage = catchAsync(async (req: Request, res: Response) => {
 
 const getMyChatSessions = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.id;
-  const result = await AIServices.getMyChatSessions(userId);
+  const searchTerm = req.query.searchTerm as string;
+  const result = await AIServices.getMyChatSessions(userId, searchTerm);
   
   sendResponse(res, {
     statusCode: httpStatus.OK,

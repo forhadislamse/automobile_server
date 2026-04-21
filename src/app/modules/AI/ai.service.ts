@@ -53,19 +53,23 @@ const processAIRequest = async (userId: string, toolType: AIToolType, prompt: st
   };
 };
 
-const startNewChat = async (userId: string, ownerId: string, payload: { persona: string, prompt: string }) => {
+const startNewChat = async (userId: string, ownerId: string, payload: { persona: string, prompt: string, image?: string }) => {
   // 1. Validate Access
   const subscription = await validateAIToolAccess(userId, payload.persona as AIToolType);
   const planName = subscription.plan.name;
   const allowedTools = AI_ACCESS_MAP[subscription.plan.category];
 
-  // 2. Create the session
+  // 2. Generate a concise AI Title for the session
+  const titleSystemPrompt = `You are a helpful assistant. Summarize the user's vehicle diagnostic request into a 3-5 word professional chat title. Output ONLY the title text. Example: "BMW Brake Sensor Issue" or "Engine Noise Analysis".`;
+  const aiTitle = await callAI(titleSystemPrompt, payload.prompt);
+
+  // 3. Create the session
   const session = await prisma.chatSession.create({
     data: {
       userId,
       ownerId,
       persona: payload.persona,
-      title: payload.prompt.substring(0, 40) + (payload.prompt.length > 40 ? '...' : '')
+      title: aiTitle.length > 50 ? aiTitle.substring(0, 47) + '...' : aiTitle
     }
   });
 
@@ -78,12 +82,13 @@ const startNewChat = async (userId: string, ownerId: string, payload: { persona:
     }
   });
 
-  // 4. Save the initial user message
+  // 4. Save the initial user message (including image if present)
   await prisma.chatMessage.create({
     data: {
       sessionId: session.id,
       role: 'user',
-      content: payload.prompt
+      content: payload.prompt,
+      image: payload.image
     }
   });
 
@@ -93,10 +98,13 @@ const startNewChat = async (userId: string, ownerId: string, payload: { persona:
     You are ${payload.persona}, the central AI assistant for an automotive repair shop. 
     The current shop is on the "${planName}". 
     The specialized AI tools available for this plan are: ${toolNames}.
+    Always use helpful icons/emojis in your response. 
+    If a vehicle image is analyzed, provide specific visual feedback.
+    Always provide clear "How to Solve" steps.
   `.trim();
 
   // 6. Get AI Response
-  const resultText = await callAI(systemPrompt, payload.prompt);
+  const resultText = await callAI(systemPrompt, payload.prompt, payload.image);
 
   // 7. Save AI response message
   const assistantMessage = await prisma.chatMessage.create({
@@ -110,7 +118,7 @@ const startNewChat = async (userId: string, ownerId: string, payload: { persona:
   return { session, assistantMessage };
 };
 
-const sendMessage = async (userId: string, payload: { sessionId: string, prompt: string }) => {
+const sendMessage = async (userId: string, payload: { sessionId: string, prompt: string, image?: string }) => {
   const session = await prisma.chatSession.findUnique({
     where: { id: payload.sessionId }
   });
@@ -124,7 +132,8 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt:
     data: {
       sessionId: session.id,
       role: 'user',
-      content: payload.prompt
+      content: payload.prompt,
+      image: payload.image
     }
   });
 
@@ -139,10 +148,12 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt:
     You are ${session.persona}, the central AI assistant for an automotive repair shop. 
     The current shop is on the "${planName}". 
     The specialized AI tools available for this plan are: ${toolNames}.
+    Always use helpful icons/emojis in your response.
+    Always provide clear "How to Solve" steps.
   `.trim();
 
   // 4. Get AI Response
-  const resultText = await callAI(systemPrompt, payload.prompt);
+  const resultText = await callAI(systemPrompt, payload.prompt, payload.image);
 
   // 5. Save assistant message
   const assistantMessage = await prisma.chatMessage.create({
@@ -156,10 +167,33 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt:
   return assistantMessage;
 };
 
-const getMyChatSessions = async (userId: string) => {
+const getMyChatSessions = async (userId: string, searchTerm?: string) => {
+  const where: any = { userId };
+
+  if (searchTerm) {
+    where.OR = [
+      {
+        title: {
+          contains: searchTerm,
+          mode: 'insensitive',
+        },
+      },
+      {
+        messages: {
+          some: {
+            content: {
+              contains: searchTerm,
+              mode: 'insensitive',
+            },
+          },
+        },
+      },
+    ];
+  }
+
   return await prisma.chatSession.findMany({
-    where: { userId },
-    orderBy: { updatedAt: 'desc' }
+    where,
+    orderBy: { updatedAt: 'desc' },
   });
 };
 
