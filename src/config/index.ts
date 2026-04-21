@@ -54,5 +54,9 @@ export default {
         secretKey: process.env.DO_SPACE_SECRET_KEY,
         bucket: process.env.DO_SPACE_BUCKET,
     },
+    ai: {
+        openai_api_key: process.env.OPENAI_API_KEY,
+        model_name: process.env.AI_MODEL_NAME || "gpt-4o-mini",
+    }
   
 };

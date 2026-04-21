@@ -4,6 +4,7 @@ import OpenAI from 'openai';
 import prisma from '../../../shared/prisma';
 import ApiError from '../../../errors/ApiErrors';
 import { AI_ACCESS_MAP, AIToolType } from './ai.constants';
+import config from '../../../config';
 
 /**
  * Validates if the current user (Technician or Owner) has access to a specific AI tool
@@ -58,10 +59,10 @@ export const validateAIToolAccess = async (userId: string, requestedTool: AITool
  * If OPENAI_API_KEY is not provided, returns a simulated response for development.
  */
 export const callAI = async (systemPrompt: string, userPrompt: string, imageUrl?: string) => {
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = config.ai.openai_api_key;
 
     if (!apiKey) {
-        console.warn("OPENAI_API_KEY not found in .env. Returning simulated response.");
+        console.warn("OPENAI_API_KEY not found in config. Returning simulated response.");
         // Simulated delay to mimic network latency
         await new Promise(resolve => setTimeout(resolve, 1500));
         
@@ -77,7 +78,7 @@ Priority: Medium`;
             apiKey: apiKey,
         });
 
-        const modelName = process.env.AI_MODEL_NAME || "gpt-4o-mini";
+        const modelName = config.ai.model_name;
 
         // Build the message content for OpenAI
         const userContent: any[] = [{ type: "text", text: userPrompt }];
