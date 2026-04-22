@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import httpStatus from 'http-status';
 import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
+import pick from '../../../shared/pick';
 import { AdminService } from './admin.service';
 
 const getDashboardStats = catchAsync(async (req: Request, res: Response) => {
@@ -15,6 +16,23 @@ const getDashboardStats = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAllShops = catchAsync(async (req: Request, res: Response) => {
+  const filters = pick(req.query, ['searchTerm', 'status', 'planId']);
+  const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
+  
+  const result = await AdminService.getAllShops(filters, options);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Shops fetched successfully',
+    meta: result.meta,
+    data: result.data,
+  });
+});
+
 export const AdminController = {
-  getDashboardStats
+  getDashboardStats,
+  getAllShops
 };
+

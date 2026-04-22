@@ -1,6 +1,7 @@
-import { UserRole, SubscriptionStatus } from '@prisma/client';
+import { UserRole, SubscriptionStatus, Prisma } from '@prisma/client';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, eachDayOfInterval, format, subDays, startOfMonth, endOfMonth } from 'date-fns';
 import prisma from '../../../shared/prisma';
+import { paginationHelper } from '../../../helpars/paginationHelper';
 
 const getDashboardStats = async () => {
   const now = new Date();
@@ -128,6 +129,76 @@ const getDashboardStats = async () => {
   };
 };
 
-export const AdminService = {
-  getDashboardStats
+const getAllShops = async (filters: any, options: any) => {
+  const { searchTerm, ...filterData } = filters;
+  const { page, limit, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
+
+  const andConditions: Prisma.UserWhereInput[] = [
+    { role: UserRole.USER, isDeleted: false }
+  ];
+
+  if (searchTerm) {
+    andConditions.push({
+      OR: [
+        { fullName: { contains: searchTerm, mode: 'insensitive' } },
+        { email: { contains: searchTerm, mode: 'insensitive' } },
+        { shopName: { contains: searchTerm, mode: 'insensitive' } }
+      ]
+    });
+  }
+
+  if (Object.keys(filterData).length > 0) {
+    andConditions.push({
+      AND: Object.keys(filterData).map((key) => ({
+        [key]: {
+          equals: (filterData as any)[key],
+        },
+      })),
+    });
+  }
+
+  const whereConditions: Prisma.UserWhereInput = { AND: andConditions };
+
+  const result = await prisma.user.findMany({
+    where: whereConditions,
+    skip,
+    take: limit,
+    orderBy: { [sortBy]: sortOrder },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      shopName: true,
+      status: true,
+      plan: {
+        select: { id: true, name: true }
+      },
+      technicians: {
+        where: { isDeleted: false },
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          totalSessions: true
+        }
+      }
+    }
+  });
+
+  const total = await prisma.user.count({ where: whereConditions });
+
+  return {
+    meta: {
+      page,
+      limit,
+      total
+    },
+    data: result
+  };
 };
+
+export const AdminService = {
+  getDashboardStats,
+  getAllShops
+};
+

@@ -11,4 +11,11 @@ router.get(
   AdminController.getDashboardStats
 );
 
+router.get(
+  '/shops',
+  auth(UserRole.ADMIN),
+  AdminController.getAllShops
+);
+
+
 export const AdminRoutes = router;
