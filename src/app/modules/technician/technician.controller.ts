@@ -96,6 +96,20 @@ const createDiagnostic = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const deleteTechnician = catchAsync(async (req: Request, res: Response) => {
+  const ownerId = req.user.id;
+  const { id } = req.params;
+
+  const result = await TechnicianServices.deleteTechnician(id, ownerId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Technician deleted and slot released successfully',
+    data: result,
+  });
+});
+
 export const TechnicianController = {
   addTechnician,
   getShopTechnicians,
@@ -103,5 +117,6 @@ export const TechnicianController = {
   getTechnicianManagementStats,
   updateTechnicianStatus,
   getShopOwnerDashboard,
-  createDiagnostic
+  createDiagnostic,
+  deleteTechnician
 };

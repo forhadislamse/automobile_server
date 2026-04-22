@@ -3,6 +3,7 @@ import ApiError from '../../../errors/ApiErrors';
 import httpStatus from 'http-status';
 import { AIToolType, AI_TOOLS, AI_ACCESS_MAP, EUROPEAN_BRANDS } from './ai.constants';
 import { validateAIToolAccess, callAI } from './ai.utils';
+import { getPersonaConfig } from './ai.config';
 
 const processAIRequest = async (userId: string, toolType: AIToolType, prompt: string) => {
   // 1. Detect if it's a European Vehicle for automatic routing
@@ -22,21 +23,21 @@ const processAIRequest = async (userId: string, toolType: AIToolType, prompt: st
   const planName = subscription.plan.name;
   const allowedTools = AI_ACCESS_MAP[subscription.plan.category];
 
-  // 3. Generate System Prompt (Plan Aware)
+  // 3. Generate System Prompt from Master Config
+  const personaConfig = getPersonaConfig(effectiveTool);
   const toolNames = allowedTools.join(', ');
   
   const systemPrompt = `
-    You are ${effectiveTool}, the central AI assistant for an automotive repair shop. 
-    The current shop is on the "${planName}". 
-    The specialized AI tools available for this plan are: ${toolNames}.
-    ${isEuropeanBrand ? 'Note: A European vehicle has been identified. Apply specialized European diagnostic knowledge.' : ''}
-    If a user asks for advanced diagnostics that are NOT in the list above, 
-    provide a basic helpful response but politely explain that they can get much more advanced, 
-    specialized AI assistance by upgrading their plan.
+${personaConfig.instructions}
+
+CURRENT CONTEXT:
+- Shop Subscription Plan: "${planName}"
+- Available Tools in this plan: ${toolNames}
+${isEuropeanBrand ? '- ACTION: A European vehicle has been identified. Apply specialized European diagnostic knowledge.' : ''}
   `.trim();
 
-  // 4. AI Logic (Placeholder)
-  const resultText = await callAI(systemPrompt, prompt);
+  // 4. AI Logic
+  const resultText = await callAI(systemPrompt, prompt, undefined, personaConfig.model);
 
   return {
     tool: effectiveTool,
@@ -112,20 +113,21 @@ const startNewChat = async (userId: string, ownerId: string, payload: { persona:
     }
   });
 
-  // 7. Generate System Prompt
+  // 7. Generate System Prompt from Master Config
+  const personaConfig = getPersonaConfig(effectivePersona);
   const toolNames = allowedTools.join(', ');
+  
   const systemPrompt = `
-    You are ${effectivePersona}, the central AI assistant for an automotive repair shop. 
-    The current shop is on the "${planName}". 
-    The specialized AI tools available for this plan are: ${toolNames}.
-    ${isEuropeanBrand ? 'Note: A European vehicle has been identified. Apply specialized European diagnostic knowledge.' : ''}
-    Always use helpful icons/emojis in your response. 
-    If a vehicle image is analyzed, provide specific visual feedback.
-    Always provide clear "How to Solve" steps.
+${personaConfig.instructions}
+
+CURRENT CONTEXT:
+- Shop Subscription Plan: "${planName}"
+- Available Tools in this plan: ${toolNames}
+${isEuropeanBrand ? '- ACTION: A European vehicle has been identified. Apply specialized European diagnostic knowledge.' : ''}
   `.trim();
 
   // 8. Get AI Response
-  const resultText = await callAI(systemPrompt, finalPrompt, payload.image);
+  const resultText = await callAI(systemPrompt, finalPrompt, payload.image, personaConfig.model);
 
   // 9. Save AI response message
   const assistantMessage = await prisma.chatMessage.create({
@@ -187,19 +189,21 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt?
   const planName = subscription.plan.name;
   const allowedTools = AI_ACCESS_MAP[subscription.plan.category];
 
-  // 3. Generate System Prompt
+  // 3. Generate System Prompt from Master Config
+  const personaConfig = getPersonaConfig(currentPersona);
   const toolNames = allowedTools.join(', ');
+  
   const systemPrompt = `
-    You are ${currentPersona}, the central AI assistant for an automotive repair shop. 
-    The current shop is on the "${planName}". 
-    The specialized AI tools available for this plan are: ${toolNames}.
-    ${isEuropeanBrand ? 'Note: A European vehicle has been identified. Apply specialized European diagnostic knowledge.' : ''}
-    Always use helpful icons/emojis in your response.
-    Always provide clear "How to Solve" steps.
+${personaConfig.instructions}
+
+CURRENT CONTEXT:
+- Shop Subscription Plan: "${planName}"
+- Available Tools in this plan: ${toolNames}
+${isEuropeanBrand ? '- ACTION: A European vehicle has been identified. Apply specialized European diagnostic knowledge.' : ''}
   `.trim();
 
   // 4. Get AI Response
-  const resultText = await callAI(systemPrompt, finalPrompt, payload.image);
+  const resultText = await callAI(systemPrompt, finalPrompt, payload.image, personaConfig.model);
 
   // 5. Save assistant message
   const assistantMessage = await prisma.chatMessage.create({

@@ -51,4 +51,11 @@ router.post(
   TechnicianController.createDiagnostic
 );
 
+router.delete(
+  '/:id',
+  auth(UserRole.USER),
+  TechnicianController.deleteTechnician
+);
+
+
 export const TechnicianRoutes = router;

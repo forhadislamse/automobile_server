@@ -1,0 +1,187 @@
+{
+	"info": {
+		"_postman_id": "8a1af4fe-7c98-437e-958b-a81af4fe4419",
+		"name": "SmartAutoTech AI & ChatImage",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Chat Image",
+			"item": [
+				{
+					"name": "Upload Images",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "images",
+									"description": "Select image files",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{server_url}}/api/v1/chat-images/upload-images",
+							"host": [
+								"{{server_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"chat-images",
+								"upload-images"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "AI Diagnostic",
+			"item": [
+				{
+					"name": "Start New Chat Session",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"persona\": \"shop_foreman_gpt\",\n    \"prompt\": \"How to replace brake pads on a BMW X5?\",\n    \"image\": \"\"\n}"
+						},
+						"url": {
+							"raw": "{{server_url}}/api/v1/ai/sessions",
+							"host": [
+								"{{server_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"sessions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Send Message",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"sessionId\": \"YOUR_SESSION_ID_HERE\",\n    \"prompt\": \"What specific tools do I need for this?\",\n    \"image\": \"\"\n}"
+						},
+						"url": {
+							"raw": "{{server_url}}/api/v1/ai/sessions/message",
+							"host": [
+								"{{server_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"sessions",
+								"message"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Sessions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{server_url}}/api/v1/ai/sessions",
+							"host": [
+								"{{server_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"sessions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Chat Messages",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{server_url}}/api/v1/ai/sessions/:sessionId/messages",
+							"host": [
+								"{{server_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"ai",
+								"sessions",
+								":sessionId",
+								"messages"
+							],
+							"variable": [
+								{
+									"key": "sessionId",
+									"value": "SESSION_ID"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{auth_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

@@ -58,7 +58,7 @@ export const validateAIToolAccess = async (userId: string, requestedTool: AITool
  * Helper to call OpenAI API for diagnostics.
  * If OPENAI_API_KEY is not provided, returns a simulated response for development.
  */
-export const callAI = async (systemPrompt: string, userPrompt: string, imageUrl?: string) => {
+export const callAI = async (systemPrompt: string, userPrompt: string, imageUrl?: string, modelOverride?: string) => {
     const apiKey = config.ai.openai_api_key;
 
     if (!apiKey) {
@@ -78,7 +78,7 @@ Priority: Medium`;
             apiKey: apiKey,
         });
 
-        const modelName = config.ai.model_name;
+        const modelName = modelOverride || config.ai.model_name;
 
         // Build the message content for OpenAI
         const userContent: any[] = [{ type: "text", text: userPrompt }];

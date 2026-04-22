@@ -190,12 +190,71 @@ const updateTechnicianStatus = async (techId: string, ownerId: string, status: '
     }
   }
 
-  // Update Technician Status
+  // Update Technician Status and handle Soft Delete for BLOCKED
+  const updateData: any = { status };
+  
+  if (status === 'BLOCKED') {
+    updateData.isDeleted = true;
+    // Rename email to free up the unique constraint
+    if (technician.email && !technician.email.startsWith('deleted_')) {
+      updateData.email = `deleted_${Date.now()}_${technician.email}`;
+    }
+  } else if (status === 'ACTIVE') {
+    // If reactivating, ensure isDeleted is false
+    updateData.isDeleted = false;
+  }
+
   return await prisma.user.update({
     where: { id: techId },
-    data: { status }
+    data: updateData
   });
 };
+
+const deleteTechnician = async (techId: string, ownerId: string) => {
+  const technician = await prisma.user.findFirst({
+    where: { id: techId, ownerId: ownerId }
+  });
+
+  if (!technician) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Technician not found or doesn't belong to your shop");
+  }
+
+  // 1. Release Slot
+  const planSubscription = await prisma.userPlanSubscription.findFirst({
+    where: { 
+      ownerId: ownerId,
+      status: { in: ['active', 'trialing'] },
+      expiresAt: { gt: new Date() }
+    }
+  });
+
+  if (planSubscription && planSubscription.technicianIds.includes(techId)) {
+    await prisma.userPlanSubscription.update({
+      where: { id: planSubscription.id },
+      data: {
+        technicianIds: {
+          set: planSubscription.technicianIds.filter(id => id !== techId)
+        }
+      }
+    });
+  }
+
+  // 2. Soft Delete and Rename Email
+  const email = technician.email;
+  const newEmail = email && !email.startsWith('deleted_') 
+    ? `deleted_${Date.now()}_${email}` 
+    : email;
+
+  return await prisma.user.update({
+    where: { id: techId },
+    data: {
+      isDeleted: true,
+      status: 'BLOCKED',
+      email: newEmail
+    }
+  });
+};
+
 
 const getTechnicianManagementStats = async (ownerId: string) => {
   const activeTechnicians = await prisma.user.count({
@@ -410,4 +469,5 @@ export const TechnicianServices = {
   getTechnicianManagementStats,
   createDiagnostic,
   getShopOwnerDashboard,
+  deleteTechnician
 };
