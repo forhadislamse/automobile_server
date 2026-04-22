@@ -8,6 +8,7 @@ import { PlanRoutes } from "../modules/Plan/plan.route";
 import { fileUploadRoutes } from "../modules/fileUpload/fileUpload.routes";
 import { TechnicianRoutes } from "../modules/technician/technician.routes";
 import { AIRoutes } from "../modules/AI/ai.routes";
+import { chatRoutes } from "../modules/chatImage/chat.routes";
 // import admin from "../../shared/firebase";
 // import { AdminRoutes } from "../modules/admin/admin.routes";
 
@@ -48,6 +49,10 @@ const moduleRoutes = [
   {
     path: "/ai",
     route: AIRoutes,
+  },
+  {
+    path: "/chat-images",
+    route: chatRoutes,
   },
   // {
   //   path: "/admin",
