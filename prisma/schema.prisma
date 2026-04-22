@@ -64,15 +64,16 @@ model User {
 model Diagnostic {
   id           String   @id @default(auto()) @map("_id") @db.ObjectId
   technicianId String   @db.ObjectId
-  technician   User     @relation("TechnicianDiagnostics", fields: [technicianId], references: [id])
+  technician   User?    @relation("TechnicianDiagnostics", fields: [technicianId], references: [id])
   ownerId      String   @db.ObjectId
-  owner        User     @relation("OwnerDiagnostics", fields: [ownerId], references: [id])
+  owner        User?    @relation("OwnerDiagnostics", fields: [ownerId], references: [id])
   persona      String   // Shop Foreman, Mechanical, Electrical, etc.
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   @@map("diagnostics")
 }
+
 
 model Notification {
   id        String           @id @default(auto()) @map("_id") @db.ObjectId

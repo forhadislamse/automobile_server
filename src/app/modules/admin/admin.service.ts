@@ -1,0 +1,133 @@
+import { UserRole, SubscriptionStatus } from '@prisma/client';
+import { startOfDay, endOfDay, startOfWeek, endOfWeek, eachDayOfInterval, format, subDays, startOfMonth, endOfMonth } from 'date-fns';
+import prisma from '../../../shared/prisma';
+
+const getDashboardStats = async () => {
+  const now = new Date();
+  const todayStart = startOfDay(now);
+  const todayEnd = endOfDay(now);
+
+  // 1. Top Card Stats
+  const activeShops = await prisma.user.count({
+    where: { role: UserRole.USER, status: 'ACTIVE', isDeleted: false }
+  });
+
+  const activeSubscriptions = await prisma.userPlanSubscription.count({
+    where: { status: { in: ['active', 'trialing'] }, expiresAt: { gt: now } }
+  });
+
+  const activeUsers = await prisma.user.count({
+    where: { status: 'ACTIVE', isDeleted: false }
+  });
+
+  const aiSessionsToday = await prisma.diagnostic.count({
+    where: { createdAt: { gte: todayStart, lte: todayEnd } }
+  });
+
+  // 2. Recent Users Table (Shop Owners)
+  const recentUsersList = await prisma.user.findMany({
+    where: { role: UserRole.USER, isDeleted: false },
+    orderBy: { createdAt: 'desc' },
+    take: 5,
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      shopName: true,
+      status: true,
+      plan: {
+        select: { name: true }
+      },
+      technicians: {
+        where: { isDeleted: false },
+        select: { id: true }
+      }
+    }
+  });
+
+  const recentUsers = recentUsersList.map(user => ({
+    id: user.id,
+    shopOwner: user.fullName,
+    email: user.email,
+    shopName: user.shopName || 'N/A',
+    plan: user.plan?.name || 'No Plan',
+    status: user.status,
+    noOfTechnicians: user.technicians.length
+  }));
+
+  // 3. Active Users Chart (Last 7 Days)
+  const weekStart = startOfWeek(now, { weekStartsOn: 0 });
+  const weekEnd = endOfWeek(now, { weekStartsOn: 0 });
+  const daysInWeek = eachDayOfInterval({ start: weekStart, end: weekEnd });
+
+  const weeklyUsers = await prisma.user.findMany({
+    where: {
+      status: 'ACTIVE',
+      isDeleted: false,
+      updatedAt: { gte: weekStart, lte: weekEnd }
+    },
+    select: { updatedAt: true }
+  });
+
+  const activeUsersChart = daysInWeek.map(day => {
+    const dayLabel = format(day, 'EEE');
+    const count = weeklyUsers.filter(u => 
+      format(u.updatedAt, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
+    ).length;
+    return { day: dayLabel, users: count };
+  });
+
+  // 4. AI Sessions Stats (Monthly)
+  const monthStart = startOfMonth(now);
+  const monthEnd = endOfMonth(now);
+  const totalSessions = await prisma.diagnostic.count({
+    where: { createdAt: { gte: monthStart, lte: monthEnd } }
+  });
+
+  const totalTechnicians = await prisma.user.count({
+    where: { role: UserRole.TECHNICIAN, isDeleted: false }
+  });
+
+  // 5. Recent Billing Table
+  const recentPayments = await prisma.payment.findMany({
+    orderBy: { createdAt: 'desc' },
+    take: 5,
+    include: {
+      user: {
+        select: { fullName: true }
+      },
+      plan: {
+        select: { name: true }
+      }
+    }
+  });
+
+  const recentBilling = recentPayments.map(payment => ({
+    orderId: `INV-${payment.id.slice(-4).toUpperCase()}`,
+    date: payment.createdAt,
+    shopOwner: payment.user?.fullName || 'Unknown',
+    plan: payment.plan?.name || 'N/A',
+    amount: payment.amount,
+    status: payment.status
+  }));
+
+  return {
+    topStats: {
+      activeShops,
+      activeSubscriptions,
+      activeUsers,
+      aiSessionsToday
+    },
+    recentUsers,
+    activeUsersChart,
+    aiSessions: {
+      total: totalSessions,
+      technicians: totalTechnicians
+    },
+    recentBilling
+  };
+};
+
+export const AdminService = {
+  getDashboardStats
+};

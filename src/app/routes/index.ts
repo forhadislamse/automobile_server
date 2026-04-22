@@ -10,9 +10,7 @@ import { TechnicianRoutes } from "../modules/technician/technician.routes";
 import { AIRoutes } from "../modules/AI/ai.routes";
 import { chatRoutes } from "../modules/chatImage/chat.routes";
 // import admin from "../../shared/firebase";
-// import { AdminRoutes } from "../modules/admin/admin.routes";
-
-// import { userCategoryInterestRoutes } from "../modules/admin/userCategoryInterest/userCategoryInterest.routes";
+import { AdminRoutes } from "../modules/admin/admin.routes";
 
 const router = express.Router();
 
@@ -54,11 +52,12 @@ const moduleRoutes = [
     path: "/chat-images",
     route: chatRoutes,
   },
-  // {
-  //   path: "/admin",
-  //   route: AdminRoutes,
-  // },
+  {
+    path: "/admin",
+    route: AdminRoutes,
+  },
 ];
+
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));
 export default router;

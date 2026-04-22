@@ -68,13 +68,13 @@ const createUserIntoDb = async (payload: any) => {
   }
 
   const token = jwtHelpers.generateToken(
-    { id: newUser.id, email: newUser.email, role: newUser.role },
+    { id: newUser.id, email: newUser.email, role: newUser.role, ownerId: newUser.ownerId },
     config.jwt.jwt_secret!,
     config.jwt.expires_in!
   );
 
   const refreshToken = jwtHelpers.generateToken(
-    { id: newUser.id, role: newUser.role, email: newUser.email },
+    { id: newUser.id, role: newUser.role, email: newUser.email, ownerId: newUser.ownerId },
     config.jwt.refresh_token_secret!,
     config.jwt.refresh_token_expires_in!
   );
@@ -139,13 +139,13 @@ const loginUser = async (payload: {
   }
 
   const token = jwtHelpers.generateToken(
-    { id: userData.id, role: userData.role, email: userData.email },
+    { id: userData.id, role: userData.role, email: userData.email, ownerId: userData.ownerId },
     config.jwt.jwt_secret!,
     config.jwt.expires_in!
   );
 
   const refreshToken = jwtHelpers.generateToken(
-    { id: userData.id, role: userData.role, email: userData.email },
+    { id: userData.id, role: userData.role, email: userData.email, ownerId: userData.ownerId },
     config.jwt.refresh_token_secret!,
     config.jwt.refresh_token_expires_in!
   );

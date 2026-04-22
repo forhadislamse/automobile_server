@@ -417,14 +417,15 @@ const getShopOwnerDashboard = async (ownerId: string) => {
     if (!performanceMap[techId]) {
       performanceMap[techId] = {
         id: techId,
-        fullName: d.technician.fullName,
-        email: d.technician.email,
-        profileImage: d.technician.profileImage,
+        fullName: d.technician?.fullName || 'Deleted Technician',
+        email: d.technician?.email || 'N/A',
+        profileImage: d.technician?.profileImage || '',
         sessions: 0
       };
     }
     performanceMap[techId].sessions += 1;
   });
+
 
   const technicianPerformance = Object.values(performanceMap);
   const totalMonthlySessions = monthDiagnostics.length;
