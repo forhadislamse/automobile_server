@@ -223,7 +223,9 @@ const getAllSubscriptions = async (filters: any, options: any) => {
   const { searchTerm, status, planId, category } = filters;
   const { page, limit, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
 
-  const andConditions: Prisma.PaymentWhereInput[] = [];
+  const andConditions: Prisma.PaymentWhereInput[] = [
+    { status: { not: 'PENDING' } }
+  ];
 
   if (searchTerm) {
     andConditions.push({
@@ -250,12 +252,33 @@ const getAllSubscriptions = async (filters: any, options: any) => {
   }
   
   if (status) {
-    // In UI status can be Paid, Trial, Past Due. 
-    // Here we map basic payment status filters.
-    if (status.toUpperCase() === 'PAID') {
-      andConditions.push({ status: 'PAID' });
-    } else if (status.toUpperCase() === 'FAILED' || status.toUpperCase() === 'PAST DUE') {
-      andConditions.push({ status: 'FAILED' });
+    const statusUpper = status.toUpperCase();
+    if (statusUpper === 'PAID') {
+      andConditions.push({
+        user: { planSubscriptions: { some: { status: 'active' } } },
+      });
+    } else if (statusUpper === 'TRIAL') {
+      andConditions.push({
+        user: { planSubscriptions: { some: { status: 'trialing' } } },
+      });
+    } else if (statusUpper === 'PAST DUE') {
+      andConditions.push({
+        user: {
+          planSubscriptions: {
+            some: {
+              status: { in: ['past_due', 'unpaid', 'incomplete_expired'] },
+            },
+          },
+        },
+      });
+    } else if (statusUpper === 'CANCELED') {
+      andConditions.push({
+        user: { planSubscriptions: { some: { status: 'canceled' } } },
+      });
+    } else if (statusUpper === 'INCOMPLETE') {
+      andConditions.push({
+        user: { planSubscriptions: { some: { status: 'incomplete' } } },
+      });
     }
   }
 
@@ -285,10 +308,15 @@ const getAllSubscriptions = async (filters: any, options: any) => {
   });
 
   const mappedData = result.map(payment => {
-    const subscription = activeSubscriptions.find(s => s.ownerId === payment.userId && s.planId === payment.planId);
+    // Find the latest subscription for this user. 
+    // We prioritize matching planId, but fallback to any subscription for this user if not found.
+    const subscription = activeSubscriptions.find(s => s.ownerId === payment.userId && s.planId === payment.planId) 
+                         || activeSubscriptions.find(s => s.ownerId === payment.userId);
     
     let billingCycle = 'N/A';
-    let displayStatus = payment.status === 'PAID' ? 'Paid' : payment.status;
+    // If subscription exists, we will determine displayStatus from it. 
+    // Otherwise, we fallback to payment status.
+    let displayStatus = payment.status === 'PAID' ? 'Paid' : (payment.status === 'PENDING' ? 'Pending' : payment.status);
 
     if (subscription) {
       if (subscription.status === 'trialing') {
