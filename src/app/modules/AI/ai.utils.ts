@@ -1,16 +1,27 @@
-import { UserRole } from '@prisma/client';
+ import { UserRole } from '@prisma/client';
 import httpStatus from 'http-status';
 import OpenAI from 'openai';
 import prisma from '../../../shared/prisma';
 import ApiError from '../../../errors/ApiErrors';
-import { AI_ACCESS_MAP, AIToolType } from './ai.constants';
+import { AIToolType } from './ai.constants';
+import { getMasterAIConfig } from './ai.config';
 import config from '../../../config';
+
+export const getAllowedToolsForPlanCategory = (category: string) => {
+  const masterConfig = getMasterAIConfig();
+  if (!masterConfig) return [];
+  
+  const allowedTiers = category === 'EUROPEAN' ? ['standard', 'premium'] : ['standard'];
+  return masterConfig.configs
+    .filter((c: any) => allowedTiers.includes(c.subscription_tier))
+    .map((c: any) => c.tool_key);
+};
 
 /**
  * Validates if the current user (Technician or Owner) has access to a specific AI tool
  * based on the Shop Owner's active subscription.
  */
-export const validateAIToolAccess = async (userId: string, requestedTool: AIToolType) => {
+export const validateAIToolAccess = async (userId: string, requestedTool: string) => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { id: true, role: true, ownerId: true }
@@ -41,13 +52,13 @@ export const validateAIToolAccess = async (userId: string, requestedTool: AITool
     throw new ApiError(httpStatus.PAYMENT_REQUIRED, 'Active subscription required to access AI tools');
   }
 
-  // Check if the requested tool is allowed for this plan category
-  const allowedTools = AI_ACCESS_MAP[planSubscription.plan.category];
+  // Determine dynamically allowed tools
+  const allowedTools = getAllowedToolsForPlanCategory(planSubscription.plan.category);
   
   if (!allowedTools.includes(requestedTool)) {
     throw new ApiError(
       httpStatus.FORBIDDEN, 
-      `Access denied. The "${requestedTool}" is not included in the ${planSubscription.plan.name}. Please upgrade your plan.`
+      `Access denied. The tool "${requestedTool}" is not included in the ${planSubscription.plan.name}. Please upgrade your plan.`
     );
   }
 

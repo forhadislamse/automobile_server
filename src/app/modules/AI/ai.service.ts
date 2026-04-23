@@ -1,8 +1,8 @@
 import prisma from '../../../shared/prisma';
 import ApiError from '../../../errors/ApiErrors';
 import httpStatus from 'http-status';
-import { AIToolType, AI_TOOLS, AI_ACCESS_MAP, EUROPEAN_BRANDS } from './ai.constants';
-import { validateAIToolAccess, callAI } from './ai.utils';
+import { AIToolType, AI_TOOLS, EUROPEAN_BRANDS } from './ai.constants';
+import { validateAIToolAccess, callAI, getAllowedToolsForPlanCategory } from './ai.utils';
 import { getPersonaConfig } from './ai.config';
 
 const processAIRequest = async (userId: string, toolType: AIToolType, prompt: string) => {
@@ -19,9 +19,9 @@ const processAIRequest = async (userId: string, toolType: AIToolType, prompt: st
   }
 
   // 2. Validate Access for the effective tool and get plan details
-  const subscription = await validateAIToolAccess(userId, effectiveTool);
+  const subscription = await validateAIToolAccess(userId, effectiveTool as string);
   const planName = subscription.plan.name;
-  const allowedTools = AI_ACCESS_MAP[subscription.plan.category];
+  const allowedTools = getAllowedToolsForPlanCategory(subscription.plan.category);
 
   // 3. Generate System Prompt from Master Config
   const personaConfig = getPersonaConfig(effectiveTool);
@@ -67,9 +67,9 @@ const startNewChat = async (userId: string, ownerId: string, payload: { persona:
   }
 
   // 2. Validate Access for the effective persona
-  const subscription = await validateAIToolAccess(userId, effectivePersona as AIToolType);
+  const subscription = await validateAIToolAccess(userId, effectivePersona);
   const planName = subscription.plan.name;
-  const allowedTools = AI_ACCESS_MAP[subscription.plan.category];
+  const allowedTools = getAllowedToolsForPlanCategory(subscription.plan.category);
 
   if (!payload.prompt && !payload.image) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Please provide either a prompt or an image');
