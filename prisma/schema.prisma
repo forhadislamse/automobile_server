@@ -229,7 +229,7 @@ model Payment {
 model ChatSession {
   id        String        @id @default(auto()) @map("_id") @db.ObjectId
   userId    String        @db.ObjectId // The user (technician or owner) who started the chat
-  user      User          @relation(fields: [userId], references: [id])
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   ownerId   String        @db.ObjectId // The shop owner who owns this data
   persona   String // Which AI tool (Shop Foreman AI, Mechanical, etc.)
   title     String? // Auto-generated title for the chat
