@@ -220,7 +220,7 @@ const updateShopStatus = async (id: string, status: UserStatus) => {
 };
 
 const getAllSubscriptions = async (filters: any, options: any) => {
-  const { searchTerm, status, planId } = filters;
+  const { searchTerm, status, planId, category } = filters;
   const { page, limit, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
 
   const andConditions: Prisma.PaymentWhereInput[] = [];
@@ -239,6 +239,14 @@ const getAllSubscriptions = async (filters: any, options: any) => {
 
   if (planId) {
     andConditions.push({ planId });
+  }
+
+  if (category) {
+    andConditions.push({
+      plan: {
+        category: category as any
+      }
+    });
   }
   
   if (status) {
@@ -289,15 +297,22 @@ const getAllSubscriptions = async (filters: any, options: any) => {
           : 0;
         billingCycle = `Trial - ${daysLeft > 0 ? daysLeft : 0} days left`;
         displayStatus = 'Trial';
-      } else if (subscription.status === 'incomplete_expired') {
-         billingCycle = 'Trial Expired';
-         displayStatus = 'Past Due';
-      } else if (subscription.status === 'past_due') {
-         billingCycle = `${payment.duration || 'Monthly'} - Expired`;
-         displayStatus = 'Past Due';
-      } else {
+      } else if (subscription.status === 'active') {
         const dateStr = subscription.expiresAt ? format(subscription.expiresAt, 'MMM dd, yyyy') : '';
         billingCycle = `${payment.duration || 'Monthly'} - ${dateStr}`;
+        displayStatus = 'Paid';
+      } else if (subscription.status === 'past_due' || subscription.status === 'unpaid') {
+        billingCycle = `${payment.duration || 'Monthly'} - Expired`;
+        displayStatus = 'Past Due';
+      } else if (subscription.status === 'incomplete_expired') {
+        billingCycle = 'Trial Expired';
+        displayStatus = 'Past Due';
+      } else if (subscription.status === 'canceled') {
+        billingCycle = 'Subscription Canceled';
+        displayStatus = 'Canceled';
+      } else if (subscription.status === 'incomplete') {
+        billingCycle = 'Payment Incomplete';
+        displayStatus = 'Incomplete';
       }
     }
 
