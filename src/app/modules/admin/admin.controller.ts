@@ -17,7 +17,7 @@ const getDashboardStats = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllShops = catchAsync(async (req: Request, res: Response) => {
-  const filters = pick(req.query, ['searchTerm', 'status', 'planId']);
+  const filters = pick(req.query, ['searchTerm', 'status', 'planId', 'category']);
   const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
   
   const result = await AdminService.getAllShops(filters, options);

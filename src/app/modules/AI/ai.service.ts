@@ -187,7 +187,7 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt?
   // 4. Validate Access for the persona in this session
   const subscription = await validateAIToolAccess(userId, currentPersona as AIToolType);
   const planName = subscription.plan.name;
-  const allowedTools = AI_ACCESS_MAP[subscription.plan.category];
+  const allowedTools = getAllowedToolsForPlanCategory(subscription.plan.category);
 
   // 3. Generate System Prompt from Master Config
   const personaConfig = getPersonaConfig(currentPersona);

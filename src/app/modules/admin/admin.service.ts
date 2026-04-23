@@ -148,12 +148,20 @@ const getAllShops = async (filters: any, options: any) => {
   }
 
   if (Object.keys(filterData).length > 0) {
-    andConditions.push({
-      AND: Object.keys(filterData).map((key) => ({
-        [key]: {
-          equals: (filterData as any)[key],
-        },
-      })),
+    Object.keys(filterData).forEach((key) => {
+      if (key === 'category') {
+        andConditions.push({
+          plan: {
+            category: (filterData as any)[key],
+          },
+        });
+      } else {
+        andConditions.push({
+          [key]: {
+            equals: (filterData as any)[key],
+          },
+        });
+      }
     });
   }
 
@@ -171,7 +179,7 @@ const getAllShops = async (filters: any, options: any) => {
       shopName: true,
       status: true,
       plan: {
-        select: { id: true, name: true }
+        select: { id: true, name: true,category: true }
       },
       technicians: {
         where: { isDeleted: false },
