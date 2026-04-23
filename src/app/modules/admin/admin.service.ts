@@ -366,7 +366,8 @@ const getAllSubscriptions = async (filters: any, options: any) => {
   };
 };
 
-const getAllPayments = async () => {
+const getAllPayments = async (options: any) => {
+  const { page, limit, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
   const andConditions: Prisma.PaymentWhereInput[] = [
     { status: { not: 'PENDING' } },
     {
@@ -378,9 +379,13 @@ const getAllPayments = async () => {
 
   const whereConditions: Prisma.PaymentWhereInput = { AND: andConditions };
 
+  const total = await prisma.payment.count({ where: whereConditions });
+
   const result = await prisma.payment.findMany({
     where: whereConditions,
-    orderBy: { createdAt: 'desc' },
+    skip,
+    take: limit,
+    orderBy: { [sortBy]: sortOrder },
     include: {
       user: {
         select: { fullName: true, email: true, shopName: true }
@@ -404,7 +409,10 @@ const getAllPayments = async () => {
     status: payment.status
   }));
 
-  return mappedData;
+  return {
+    meta: { page, limit, total },
+    data: mappedData
+  };
 };
 
 export const AdminService = {
