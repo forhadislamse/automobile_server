@@ -17,5 +17,11 @@ router.get(
   AdminController.getAllShops
 );
 
+router.patch(
+  '/shops/status/:id',
+  auth(UserRole.ADMIN),
+  AdminController.updateShopStatus
+);
+
 
 export const AdminRoutes = router;

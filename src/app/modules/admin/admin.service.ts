@@ -1,4 +1,4 @@
-import { UserRole, SubscriptionStatus, Prisma } from '@prisma/client';
+import { UserRole, SubscriptionStatus, Prisma, UserStatus } from '@prisma/client';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, eachDayOfInterval, format, subDays, startOfMonth, endOfMonth } from 'date-fns';
 import prisma from '../../../shared/prisma';
 import { paginationHelper } from '../../../helpars/paginationHelper';
@@ -205,8 +205,23 @@ const getAllShops = async (filters: any, options: any) => {
   };
 };
 
+const updateShopStatus = async (id: string, status: UserStatus) => {
+  const result = await prisma.user.update({
+    where: {
+      id,
+      role: UserRole.USER,
+    },
+    data: {
+      status,
+    },
+  });
+
+  return result;
+};
+
 export const AdminService = {
   getDashboardStats,
-  getAllShops
+  getAllShops,
+  updateShopStatus
 };
 

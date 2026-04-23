@@ -31,8 +31,23 @@ const getAllShops = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const updateShopStatus = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  const result = await AdminService.updateShopStatus(id, status);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: `Shop status updated to ${status} successfully`,
+    data: result,
+  });
+});
+
 export const AdminController = {
   getDashboardStats,
-  getAllShops
+  getAllShops,
+  updateShopStatus
 };
 
