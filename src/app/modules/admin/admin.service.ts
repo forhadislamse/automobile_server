@@ -219,9 +219,109 @@ const updateShopStatus = async (id: string, status: UserStatus) => {
   return result;
 };
 
+const getAllSubscriptions = async (filters: any, options: any) => {
+  const { searchTerm, status, planId } = filters;
+  const { page, limit, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
+
+  const andConditions: Prisma.PaymentWhereInput[] = [];
+
+  if (searchTerm) {
+    andConditions.push({
+      user: {
+        OR: [
+          { shopName: { contains: searchTerm, mode: 'insensitive' } },
+          { fullName: { contains: searchTerm, mode: 'insensitive' } },
+          { email: { contains: searchTerm, mode: 'insensitive' } }
+        ]
+      }
+    });
+  }
+
+  if (planId) {
+    andConditions.push({ planId });
+  }
+  
+  if (status) {
+    // In UI status can be Paid, Trial, Past Due. 
+    // Here we map basic payment status filters.
+    if (status.toUpperCase() === 'PAID') {
+      andConditions.push({ status: 'PAID' });
+    } else if (status.toUpperCase() === 'FAILED' || status.toUpperCase() === 'PAST DUE') {
+      andConditions.push({ status: 'FAILED' });
+    }
+  }
+
+  const whereConditions: Prisma.PaymentWhereInput = { AND: andConditions };
+
+  const result = await prisma.payment.findMany({
+    where: whereConditions,
+    skip,
+    take: limit,
+    orderBy: { [sortBy]: sortOrder },
+    include: {
+      user: {
+        select: { shopName: true, fullName: true, email: true }
+      },
+      plan: {
+        select: { name: true }
+      }
+    }
+  });
+
+  const total = await prisma.payment.count({ where: whereConditions });
+
+  // Fetch subscriptions to get trial/expiry info
+  const ownerIds = result.map(p => p.userId);
+  const activeSubscriptions = await prisma.userPlanSubscription.findMany({
+    where: { ownerId: { in: ownerIds } }
+  });
+
+  const mappedData = result.map(payment => {
+    const subscription = activeSubscriptions.find(s => s.ownerId === payment.userId && s.planId === payment.planId);
+    
+    let billingCycle = 'N/A';
+    let displayStatus = payment.status === 'PAID' ? 'Paid' : payment.status;
+
+    if (subscription) {
+      if (subscription.status === 'trialing') {
+        const daysLeft = subscription.expiresAt 
+          ? Math.ceil((subscription.expiresAt.getTime() - new Date().getTime()) / (1000 * 3600 * 24))
+          : 0;
+        billingCycle = `Trial - ${daysLeft > 0 ? daysLeft : 0} days left`;
+        displayStatus = 'Trial';
+      } else if (subscription.status === 'incomplete_expired') {
+         billingCycle = 'Trial Expired';
+         displayStatus = 'Past Due';
+      } else if (subscription.status === 'past_due') {
+         billingCycle = `${payment.duration || 'Monthly'} - Expired`;
+         displayStatus = 'Past Due';
+      } else {
+        const dateStr = subscription.expiresAt ? format(subscription.expiresAt, 'MMM dd, yyyy') : '';
+        billingCycle = `${payment.duration || 'Monthly'} - ${dateStr}`;
+      }
+    }
+
+    return {
+      id: payment.id,
+      shopName: payment.user?.shopName || payment.user?.fullName || 'N/A',
+      orderId: `INV-${payment.id.slice(-4).toUpperCase()}`,
+      plan: payment.plan?.name || 'N/A',
+      billingCycle: billingCycle,
+      status: displayStatus,
+      paymentMethod: 'Stripe'
+    };
+  });
+
+  return {
+    meta: { page, limit, total },
+    data: mappedData
+  };
+};
+
 export const AdminService = {
   getDashboardStats,
   getAllShops,
-  updateShopStatus
+  updateShopStatus,
+  getAllSubscriptions
 };
 

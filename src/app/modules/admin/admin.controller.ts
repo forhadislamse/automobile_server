@@ -45,9 +45,25 @@ const updateShopStatus = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAllSubscriptions = catchAsync(async (req: Request, res: Response) => {
+  const filters = pick(req.query, ['searchTerm', 'status', 'planId']);
+  const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
+  
+  const result = await AdminService.getAllSubscriptions(filters, options);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Subscriptions fetched successfully',
+    meta: result.meta,
+    data: result.data,
+  });
+});
+
 export const AdminController = {
   getDashboardStats,
   getAllShops,
-  updateShopStatus
+  updateShopStatus,
+  getAllSubscriptions
 };
 

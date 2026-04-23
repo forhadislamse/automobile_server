@@ -23,5 +23,10 @@ router.patch(
   AdminController.updateShopStatus
 );
 
+router.get(
+  '/subscriptions',
+  auth(UserRole.ADMIN),
+  AdminController.getAllSubscriptions
+);
 
 export const AdminRoutes = router;
