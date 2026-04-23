@@ -224,7 +224,12 @@ const getAllSubscriptions = async (filters: any, options: any) => {
   const { page, limit, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
 
   const andConditions: Prisma.PaymentWhereInput[] = [
-    { status: { not: 'PENDING' } }
+    { status: { not: 'PENDING' } },
+    {
+      user: {
+        email: { not: "" },
+      },
+    },
   ];
 
   if (searchTerm) {
