@@ -29,4 +29,10 @@ router.get(
   AdminController.getAllSubscriptions
 );
 
+router.get(
+  '/payments',
+  auth(UserRole.ADMIN),
+  AdminController.getAllPayments
+);
+
 export const AdminRoutes = router;

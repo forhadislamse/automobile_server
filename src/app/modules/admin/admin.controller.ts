@@ -60,10 +60,25 @@ const getAllSubscriptions = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAllPayments = catchAsync(async (req: Request, res: Response) => {
+  // const filters = pick(req.query, ['searchTerm', 'status', 'planId']);
+  // const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
+  
+  const result = await AdminService.getAllPayments();
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Payments fetched successfully',
+    data: result,
+  });
+});
+
 export const AdminController = {
   getDashboardStats,
   getAllShops,
   updateShopStatus,
-  getAllSubscriptions
+  getAllSubscriptions,
+  getAllPayments
 };
 

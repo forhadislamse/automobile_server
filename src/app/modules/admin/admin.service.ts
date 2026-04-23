@@ -361,10 +361,52 @@ const getAllSubscriptions = async (filters: any, options: any) => {
   };
 };
 
+const getAllPayments = async () => {
+  const andConditions: Prisma.PaymentWhereInput[] = [
+    { status: { not: 'PENDING' } },
+    {
+      user: {
+        email: { not: "" },
+      },
+    },
+  ];
+
+  const whereConditions: Prisma.PaymentWhereInput = { AND: andConditions };
+
+  const result = await prisma.payment.findMany({
+    where: whereConditions,
+    orderBy: { createdAt: 'desc' },
+    include: {
+      user: {
+        select: { fullName: true, email: true, shopName: true }
+      },
+      plan: {
+        select: { name: true }
+      }
+    }
+  });
+
+  const mappedData = result.map(payment => ({
+    id: payment.id,
+    orderId: `INV-${payment.id.slice(-4).toUpperCase()}`,
+    shopOwner: {
+      name: payment.user?.fullName || 'Unknown',
+      email: payment.user?.email || ''
+    },
+    date: payment.createdAt,
+    plan: payment.plan?.name || 'N/A',
+    amount: payment.amount,
+    status: payment.status
+  }));
+
+  return mappedData;
+};
+
 export const AdminService = {
   getDashboardStats,
   getAllShops,
   updateShopStatus,
-  getAllSubscriptions
+  getAllSubscriptions,
+  getAllPayments
 };
 
