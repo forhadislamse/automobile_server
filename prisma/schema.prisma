@@ -53,10 +53,10 @@ model User {
   owner       User?   @relation("ShopTechnicians", fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   technicians User[]  @relation("ShopTechnicians")
 
-  Notification Notification[]
-  Payment      Payment[]
-  diagnostics         Diagnostic[] @relation("TechnicianDiagnostics")
-  managedDiagnostics  Diagnostic[] @relation("OwnerDiagnostics")
+  Notification       Notification[]
+  Payment            Payment[]
+  diagnostics        Diagnostic[]   @relation("TechnicianDiagnostics")
+  managedDiagnostics Diagnostic[]   @relation("OwnerDiagnostics")
 
   @@map("users")
 }
@@ -64,16 +64,17 @@ model User {
 model Diagnostic {
   id           String   @id @default(auto()) @map("_id") @db.ObjectId
   technicianId String   @db.ObjectId
-  technician   User?    @relation("TechnicianDiagnostics", fields: [technicianId], references: [id])
+  // technician   User?    @relation("TechnicianDiagnostics", fields: [technicianId], references: [id])
+  technician   User?    @relation("TechnicianDiagnostics", fields: [technicianId], references: [id], onDelete: Cascade)
   ownerId      String   @db.ObjectId
-  owner        User?    @relation("OwnerDiagnostics", fields: [ownerId], references: [id])
-  persona      String   // Shop Foreman, Mechanical, Electrical, etc.
+  // owner        User?    @relation("OwnerDiagnostics", fields: [ownerId], references: [id])
+  owner        User?    @relation("OwnerDiagnostics", fields: [ownerId], references: [id], onDelete: Cascade)
+  persona      String // Shop Foreman, Mechanical, Electrical, etc.
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   @@map("diagnostics")
 }
-
 
 model Notification {
   id        String           @id @default(auto()) @map("_id") @db.ObjectId
@@ -185,9 +186,9 @@ enum SubscriptionStatus {
 model UserPlanSubscription {
   id                   String             @id @default(auto()) @map("_id") @db.ObjectId
   ownerId              String             @db.ObjectId
-  owner                User               @relation("OwnerSubscriptions", fields: [ownerId], references: [id])
+  owner                User               @relation("OwnerSubscriptions", fields: [ownerId], references: [id], onDelete: Cascade)
   planId               String             @db.ObjectId
-  plan                 SubscriptionPlan   @relation("PlanSubscriptions", fields: [planId], references: [id])
+  plan                 SubscriptionPlan   @relation("PlanSubscriptions", fields: [planId], references: [id], onDelete: Cascade)
   duration             PlanDuration
   status               SubscriptionStatus @default(active)
   expiresAt            DateTime?
@@ -226,15 +227,15 @@ model Payment {
 }
 
 model ChatSession {
-  id           String        @id @default(auto()) @map("_id") @db.ObjectId
-  userId       String        @db.ObjectId // The user (technician or owner) who started the chat
-  user         User          @relation(fields: [userId], references: [id])
-  ownerId      String        @db.ObjectId // The shop owner who owns this data
-  persona      String        // Which AI tool (Shop Foreman AI, Mechanical, etc.)
-  title        String?       // Auto-generated title for the chat
-  messages     ChatMessage[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id        String        @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String        @db.ObjectId // The user (technician or owner) who started the chat
+  user      User          @relation(fields: [userId], references: [id])
+  ownerId   String        @db.ObjectId // The shop owner who owns this data
+  persona   String // Which AI tool (Shop Foreman AI, Mechanical, etc.)
+  title     String? // Auto-generated title for the chat
+  messages  ChatMessage[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 
   @@map("chat_sessions")
 }
@@ -243,9 +244,9 @@ model ChatMessage {
   id        String      @id @default(auto()) @map("_id") @db.ObjectId
   sessionId String      @db.ObjectId
   session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  role      String      // 'user' or 'assistant'
-  content   String      // The message text
-  image     String?     // URL for uploaded image
+  role      String // 'user' or 'assistant'
+  content   String // The message text
+  image     String? // URL for uploaded image
   createdAt DateTime    @default(now())
 
   @@map("chat_messages")
