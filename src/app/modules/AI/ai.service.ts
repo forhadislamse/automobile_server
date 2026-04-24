@@ -29,11 +29,11 @@ const processAIRequest = async (userId: string, toolType: AIToolType, prompt: st
   const personaConfig = getPersonaConfig(effectiveTool);
   const toolNames = allowedTools.join(', ');
   const lockedTools = getLockedToolsForPlanCategory(planSubscription.plan.category);
-  
-  const lockedToolsText = lockedTools.length > 0 
-    ? `- Locked Tools (Upgrade Required): ${lockedTools.join(', ')}\n- ACTION: If the technician's issue requires a tool from the Locked list, politely explain that the specific specialized tool is available in a higher plan and suggest an upgrade.`
+
+  const lockedToolsText = lockedTools.length > 0
+    ? `- Locked Tools (Upgrade Required): ${lockedTools.join(', ')}\n- CRITICAL INSTRUCTION: If the user's request involves any topic in this "Locked Tools" list, you are FORBIDDEN from giving any diagnostic advice. You must IDENTIFY which specialized tool is needed and explain that it requires a higher plan (Professional or European).`
     : '- All professional tools are unlocked in this plan.';
-  
+
   const systemPrompt = `
 ${personaConfig.instructions}
 
@@ -41,9 +41,10 @@ CURRENT CONTEXT:
 - Shop Subscription Plan: "${planName}"
 - Available Tools in this plan: ${toolNames}
 ${lockedToolsText}
-- EUROPEAN VEHICLE POLICY: If you identify a European vehicle (even if not explicitly flagged below), you must apply specialized European diagnostic knowledge. If the European Specialist tool is in the "Locked Tools" list above, politely inform the user that specialized European diagnostics require an upgrade.
 
-${isEuropeanBrand ? '- ACTION: A European vehicle has been identified. Apply specialized European diagnostic knowledge.' : ''}
+POLICIES:
+- If a European vehicle is detected and the "European Specialist" tool is locked, you must refuse the diagnostic and suggest an upgrade.
+- If an Electrical or Transmission issue is detected and those tools are locked, you must refuse the diagnostic and suggest an upgrade.
   `.trim();
 
   // 4. Handle Locked Tool (Short-circuit without calling OpenAI)
@@ -154,10 +155,10 @@ const startNewChat = async (userId: string, ownerId: string, payload: { persona:
   const toolNames = allowedTools.join(', ');
   const lockedTools = getLockedToolsForPlanCategory(planSubscription.plan.category);
 
-  const lockedToolsText = lockedTools.length > 0 
-    ? `- Locked Tools (Upgrade Required): ${lockedTools.join(', ')}\n- ACTION: If the technician's issue requires a tool from the Locked list, politely explain that the specific specialized tool is available in a higher plan and suggest an upgrade.`
+  const lockedToolsText = lockedTools.length > 0
+    ? `- Locked Tools (Upgrade Required): ${lockedTools.join(', ')}\n- CRITICAL INSTRUCTION: If the user's request involves any topic in this "Locked Tools" list, you are FORBIDDEN from giving any diagnostic advice. You must IDENTIFY which specialized tool is needed and explain that it requires a higher plan (Professional or European).`
     : '- All professional tools are unlocked in this plan.';
-  
+
   const systemPrompt = `
 ${personaConfig.instructions}
 
@@ -165,9 +166,10 @@ CURRENT CONTEXT:
 - Shop Subscription Plan: "${planName}"
 - Available Tools in this plan: ${toolNames}
 ${lockedToolsText}
-- EUROPEAN VEHICLE POLICY: If you identify a European vehicle (even if not explicitly flagged below), you must apply specialized European diagnostic knowledge. If the European Specialist tool is in the "Locked Tools" list above, politely inform the user that specialized European diagnostics require an upgrade.
 
-${isEuropeanBrand ? '- ACTION: A European vehicle has been identified. Apply specialized European diagnostic knowledge.' : ''}
+POLICIES:
+- If a European vehicle is detected and the "European Specialist" tool is locked, you must refuse the diagnostic and suggest an upgrade.
+- If an Electrical or Transmission issue is detected and those tools are locked, you must refuse the diagnostic and suggest an upgrade.
   `.trim();
 
   // 8. Get AI Response (Normal Flow)
@@ -209,7 +211,7 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt?
   if (isEuropeanBrand && session.persona !== AI_TOOLS.EUROPEAN_SPECIALIST) {
     console.log(`[AI ROUTING] European brand detected in message. Routing to European Specialist.`);
     currentPersona = AI_TOOLS.EUROPEAN_SPECIALIST;
-    
+
     // Update session persona to European Specialist for future messages
     await prisma.chatSession.update({
       where: { id: session.id },
@@ -240,10 +242,10 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt?
   const toolNames = allowedTools.join(', ');
   const lockedTools = getLockedToolsForPlanCategory(planSubscription.plan.category);
 
-  const lockedToolsText = lockedTools.length > 0 
-    ? `- Locked Tools (Upgrade Required): ${lockedTools.join(', ')}\n- ACTION: If the technician's issue requires a tool from the Locked list, politely explain that the specific specialized tool is available in a higher plan and suggest an upgrade.`
+  const lockedToolsText = lockedTools.length > 0
+    ? `- Locked Tools (Upgrade Required): ${lockedTools.join(', ')}\n- CRITICAL INSTRUCTION: If the user's request involves any topic in this "Locked Tools" list, you are FORBIDDEN from giving any diagnostic advice. You must IDENTIFY which specialized tool is needed and explain that it requires a higher plan (Professional or European).`
     : '- All professional tools are unlocked in this plan.';
-  
+
   const systemPrompt = `
 ${personaConfig.instructions}
 
@@ -251,9 +253,10 @@ CURRENT CONTEXT:
 - Shop Subscription Plan: "${planName}"
 - Available Tools in this plan: ${toolNames}
 ${lockedToolsText}
-- EUROPEAN VEHICLE POLICY: If you identify a European vehicle (even if not explicitly flagged below), you must apply specialized European diagnostic knowledge. If the European Specialist tool is in the "Locked Tools" list above, politely inform the user that specialized European diagnostics require an upgrade.
 
-${isEuropeanBrand ? '- ACTION: A European vehicle has been identified. Apply specialized European diagnostic knowledge.' : ''}
+POLICIES:
+- If a European vehicle is detected and the "European Specialist" tool is locked, you must refuse the diagnostic and suggest an upgrade.
+- If an Electrical or Transmission issue is detected and those tools are locked, you must refuse the diagnostic and suggest an upgrade.
   `.trim();
 
   // 4. Get AI Response

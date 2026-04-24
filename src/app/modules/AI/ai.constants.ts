@@ -48,6 +48,6 @@ export const EUROPEAN_BRANDS = [
   'Volvo', 'Land Rover', 'Jaguar', 'Ferrari', 'Lamborghini', 'Fiat', 
   'Alfa Romeo', 'Peugeot', 'Renault', 'Citroen', 'Skoda', 'SEAT', 'Saab', 
   'Mini Cooper', 'Mini', 'Bentley', 'Rolls-Royce', 'Aston Martin', 'Maserati',
-  'McLaren', 'Bugatti', 'Lotus', 'Pagani', 'Lancia', 'Smart', 'Dacia', 'Opel',
-  'Vauxhall', 'Iveco', 'MAN', 'DS Automobiles', 'DS', 'Alpine', 'Abarth', 'Cupra'
+  'McLaren', 'Bugatti', 'Lotus', 'Pagani', 'Lancia', 'Smart Car', 'Dacia', 'Opel',
+  'Vauxhall', 'Iveco', 'MAN Truck', 'DS Automobiles', 'DS', 'Alpine', 'Abarth', 'Cupra'
 ];
