@@ -11,10 +11,42 @@ export const getAllowedToolsForPlanCategory = (category: string) => {
   const masterConfig = getMasterAIConfig();
   if (!masterConfig) return [];
   
-  const allowedTiers = category === 'EUROPEAN' ? ['standard', 'premium'] : ['standard'];
+  const allConfigs = masterConfig.configs;
+
+  if (category === 'BASIC') {
+    // Basic: Only Foreman, Mechanical, and OBD2 (standard tools that are not advanced)
+    const basicToolKeys = ['shop_foreman_gpt', 'mechanical_diagnostics_gpt', 'obd2_code_interpreter_gpt'];
+    return allConfigs
+      .filter((c: any) => basicToolKeys.includes(c.tool_key))
+      .map((c: any) => c.tool_key);
+  }
+  
+  if (category === 'PROFESSIONAL') {
+    // Professional: All "standard" tools, excluding "premium" (European)
+    return allConfigs
+      .filter((c: any) => c.subscription_tier === 'standard')
+      .map((c: any) => c.tool_key);
+  }
+
+  if (category === 'EUROPEAN') {
+    // European: Everything
+    return allConfigs.map((c: any) => c.tool_key);
+  }
+
+  return [];
+};
+
+/**
+ * Gets the list of tools NOT available in the current plan for upgrade suggestions
+ */
+export const getLockedToolsForPlanCategory = (category: string) => {
+  const masterConfig = getMasterAIConfig();
+  if (!masterConfig) return [];
+  
+  const allowedTools = getAllowedToolsForPlanCategory(category);
   return masterConfig.configs
-    .filter((c: any) => allowedTiers.includes(c.subscription_tier))
-    .map((c: any) => c.tool_key);
+    .filter((c: any) => !allowedTools.includes(c.tool_key))
+    .map((c: any) => c.display_name);
 };
 
 /**
@@ -56,13 +88,23 @@ export const validateAIToolAccess = async (userId: string, requestedTool: string
   const allowedTools = getAllowedToolsForPlanCategory(planSubscription.plan.category);
   
   if (!allowedTools.includes(requestedTool)) {
-    throw new ApiError(
-      httpStatus.FORBIDDEN, 
-      `Access denied. The tool "${requestedTool}" is not included in the ${planSubscription.plan.name}. Please upgrade your plan.`
-    );
+    // Determine which plan is needed
+    const masterConfig = getMasterAIConfig();
+    const toolConfig = masterConfig?.configs.find((c: any) => c.tool_key === requestedTool);
+    const requiredTier = toolConfig?.subscription_tier || 'professional';
+    const planName = requiredTier === 'premium' ? 'European Specialist' : 'Professional Shop';
+
+    return {
+      hasAccess: false,
+      planSubscription,
+      message: `Access to the specialized "${toolConfig?.display_name || requestedTool}" tool is not available in your current ${planSubscription.plan.name}. This feature is included in the ${planName} plan. Please contact your shop owner to upgrade your subscription to access this advanced diagnostic capability.`
+    };
   }
 
-  return planSubscription;
+  return {
+    hasAccess: true,
+    planSubscription
+  };
 };
 
 /**

@@ -23,11 +23,21 @@ const getMyProfile = async (userToken: string) => {
     },
     include: {
       plan: true,
+      owner: {
+        include: {
+          plan: true
+        }
+      }
     },
   });
 
   if (!userProfile) {
     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  // If user is a technician and doesn't have a direct plan, use the owner's plan
+  if (userProfile.role === 'TECHNICIAN' && !userProfile.plan && userProfile.owner?.plan) {
+    userProfile.plan = userProfile.owner.plan;
   }
 
   // Check and update subscription status if expired
