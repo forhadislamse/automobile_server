@@ -56,13 +56,13 @@ router.post(
 
 router.get(
   '/sessions',
-  auth(UserRole.USER, UserRole.TECHNICIAN),
+  auth(UserRole.USER, UserRole.TECHNICIAN, UserRole.ADMIN),
   AIController.getMyChatSessions
 );
 
 router.get(
   '/sessions/:sessionId/messages',
-  auth(UserRole.USER, UserRole.TECHNICIAN),
+  auth(UserRole.USER, UserRole.TECHNICIAN, UserRole.ADMIN),
   AIController.getChatMessages
 );
 
