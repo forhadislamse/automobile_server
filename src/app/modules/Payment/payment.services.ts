@@ -188,6 +188,7 @@ const createSubscriptionIntent = async (userId: string, planId: string, duration
             userId: user.id,
             planId: plan.id,
             amount: isEligibleForTrial ? 0 : priceOption.price,
+            planPrice: priceOption.price, // Save the actual plan price even for trials
             duration: duration,
             status: 'PENDING',
             transactionId: paymentIntent?.id || setupIntent?.id || `SUB_${subscription.id}`,
@@ -240,6 +241,10 @@ const handleWebhook = async (payload: string, sig: string) => {
                 const userId = subscription.metadata.userId;
                 const duration = subscription.metadata.duration as any;
 
+                // Fetch plan to get the original price
+                const plan = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
+                const planPrice = plan?.prices.find(p => p.duration === duration)?.price || 0;
+
                 // 1. Update or Create Payment record for billing history
                 const amountPaid = (invoice.amount_paid / 100);
                 
@@ -269,6 +274,7 @@ const handleWebhook = async (payload: string, sig: string) => {
                             userId: userId,
                             planId: planId,
                             amount: amountPaid,
+                            planPrice: planPrice, // Store the original plan price
                             duration: duration,
                             status: 'PAID',
                             transactionId: paymentIntentId,

@@ -215,6 +215,7 @@ model Payment {
   planId         String           @db.ObjectId
   plan           SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
   amount         Float
+  planPrice      Float?           // Original price of the plan for the chosen duration
   duration       PlanDuration? // Field added to track chosen duration
   status         PaymentStatus    @default(PENDING)
   transactionId  String?          @unique
