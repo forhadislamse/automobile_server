@@ -3,7 +3,9 @@ import config from "../config";
 
 const emailSender = async (email: string, html: string, subject: string) => {
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // use SSL
     auth: {
       user: config.emailSender.email, 
       pass: config.emailSender.app_pass, 

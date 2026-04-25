@@ -344,14 +344,18 @@ const handleWebhook = async (payload: string, sig: string) => {
                 });
 
                 // Send Welcome Email for first-time subscription/trial
+                console.log(`[WEBHOOK] Attempting to send welcome email to: ${userId}`);
                 const userForEmail = await prisma.user.findUnique({ where: { id: userId } });
                 if (userForEmail && userForEmail.email) {
                     try {
                         const html = welcomeEmailTemplate(userForEmail.fullName || "Valued Owner");
                         await emailSender(userForEmail.email, html, "Welcome to SmartAutoTech AI!");
+                        console.log(`[WEBHOOK] Welcome email sent to ${userForEmail.email}`);
                     } catch (error) {
-                        console.error("Failed to send welcome email via webhook:", error);
+                        console.error("[WEBHOOK] Failed to send welcome email:", error);
                     }
+                } else {
+                    console.log(`[WEBHOOK] Skip welcome email: User or Email not found. User found: ${!!userForEmail}`);
                 }
             }
             break;
@@ -528,13 +532,17 @@ const confirmPayment = async (paymentId: string, paymentIntentId: string) => {
     });
 
     // Send Welcome Email for first-time subscription/trial
+    console.log(`[CONFIRM_PAYMENT] Attempting to send welcome email to: ${payment.userId}`);
     if (user && user.email) {
         try {
             const html = welcomeEmailTemplate(user.fullName || "Valued Owner");
             await emailSender(user.email, html, "Welcome to SmartAutoTech AI!");
+            console.log(`[CONFIRM_PAYMENT] Welcome email sent to ${user.email}`);
         } catch (error) {
-            console.error("Failed to send welcome email via confirmPayment:", error);
+            console.error("[CONFIRM_PAYMENT] Failed to send welcome email:", error);
         }
+    } else {
+        console.log(`[CONFIRM_PAYMENT] Skip welcome email: User or Email not found. User found: ${!!user}`);
     }
 
     return updatedPayment;
