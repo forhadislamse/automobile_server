@@ -31,7 +31,7 @@ export const welcomeEmailTemplate = (fullName: string) => `
             <p>Best regards,<br>The SmartAutoTech Team</p>
         </div>
         <div class="footer">
-            &copy; 2026 SmartAutoTech AI. All rights reserved.
+            &copy; 2026 SmartAutoTech. All rights reserved.
         </div>
     </div>
 </body>
