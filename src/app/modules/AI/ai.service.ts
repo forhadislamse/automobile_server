@@ -243,7 +243,19 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt?
   const planName = planSubscription.plan.name;
   const allowedTools = getAllowedToolsForPlanCategory(planSubscription.plan.category);
 
-  // 3. Generate System Prompt from Master Config
+  // 3. Handle Locked Tool (Short-circuit without calling OpenAI)
+  if (!validation.hasAccess) {
+    const lockedMessage = await prisma.chatMessage.create({
+      data: {
+        sessionId: session.id,
+        role: 'assistant',
+        content: validation.message as string
+      }
+    });
+    return lockedMessage;
+  }
+
+  // 4. Generate System Prompt from Master Config
   const personaConfig = getPersonaConfig(currentPersona);
   const toolNames = allowedTools.join(', ');
   const lockedTools = getLockedToolsForPlanCategory(planSubscription.plan.category);
