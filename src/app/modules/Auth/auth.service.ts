@@ -8,6 +8,7 @@ import httpStatus from "http-status";
 import { generateOtp } from "../../../helpars/generateOtp";
 import emailSender from "../../../shared/emailSender";
 import prisma from "../../../shared/prisma";
+import { registrationOtpTemplate } from "../../../helpars/template/registrationOtpTemplate";
 
 
 
@@ -62,6 +63,14 @@ const createUserIntoDb = async (payload: any) => {
       },
     });
     console.log("User successfully created in DB:", newUser.id);
+
+    // Send Registration OTP Email
+    try {
+      const html = registrationOtpTemplate(otp);
+      await emailSender(email, html, "Verify your SmartAutoTech Account");
+    } catch (error) {
+      console.error("Failed to send registration OTP email:", error);
+    }
   } catch (error) {
     console.error("Prisma error during user creation:", error);
     throw error;
@@ -338,7 +347,7 @@ const verifyEmailOtp = async (payload: {
   }
 
   // UPDATE USER: Mark email as verified + Clear OTP fields
-  await prisma.user.update({
+  const updatedUser = await prisma.user.update({
     where: { email: payload.email },
     data: {
       isVerifyEmail: true,        
@@ -349,6 +358,7 @@ const verifyEmailOtp = async (payload: {
       id: true,
       fullName: true,
       email: true,
+      role: true,
       isVerifyEmail: true,
       updatedAt: true,
     }

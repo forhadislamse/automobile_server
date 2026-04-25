@@ -3,6 +3,8 @@ import config from '../../../config';
 import prisma from '../../../shared/prisma';
 import ApiError from '../../../errors/ApiErrors';
 import httpStatus from 'http-status';
+import emailSender from '../../../shared/emailSender';
+import { welcomeEmailTemplate } from '../../../helpars/template/welcomeEmailTemplate';
 
 // const stripe = new Stripe(config.stripe.secret_key as string, {
 //     apiVersion: '2025-07-30.basil   as any,
@@ -340,6 +342,17 @@ const handleWebhook = async (payload: string, sig: string) => {
                         })
                     },
                 });
+
+                // Send Welcome Email for first-time subscription/trial
+                const userForEmail = await prisma.user.findUnique({ where: { id: userId } });
+                if (userForEmail && userForEmail.email) {
+                    try {
+                        const html = welcomeEmailTemplate(userForEmail.fullName || "Valued Owner");
+                        await emailSender(userForEmail.email, html, "Welcome to SmartAutoTech AI!");
+                    } catch (error) {
+                        console.error("Failed to send welcome email via webhook:", error);
+                    }
+                }
             }
             break;
 
@@ -513,6 +526,16 @@ const confirmPayment = async (paymentId: string, paymentIntentId: string) => {
             })
         },
     });
+
+    // Send Welcome Email for first-time subscription/trial
+    if (user && user.email) {
+        try {
+            const html = welcomeEmailTemplate(user.fullName || "Valued Owner");
+            await emailSender(user.email, html, "Welcome to SmartAutoTech AI!");
+        } catch (error) {
+            console.error("Failed to send welcome email via confirmPayment:", error);
+        }
+    }
 
     return updatedPayment;
 };
