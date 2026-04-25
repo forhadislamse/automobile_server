@@ -231,6 +231,12 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt?
     }
   });
 
+  // Update session updatedAt to mark activity for today
+  await prisma.chatSession.update({
+    where: { id: session.id },
+    data: { updatedAt: new Date() }
+  });
+
   // 4. Validate Access for the persona in this session
   const validation = await validateAIToolAccess(userId, currentPersona as AIToolType);
   const planSubscription = validation.planSubscription;

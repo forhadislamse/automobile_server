@@ -21,8 +21,8 @@ const getDashboardStats = async () => {
     where: { status: 'ACTIVE', isDeleted: false }
   });
 
-  const aiSessionsToday = await prisma.diagnostic.count({
-    where: { createdAt: { gte: todayStart, lte: todayEnd } }
+  const aiSessionsToday = await prisma.chatSession.count({
+    where: { updatedAt: { gte: todayStart, lte: todayEnd } }
   });
 
   // 2. Recent Users Table (Shop Owners)
@@ -81,8 +81,8 @@ const getDashboardStats = async () => {
   // 4. AI Sessions Stats (Monthly)
   const monthStart = startOfMonth(now);
   const monthEnd = endOfMonth(now);
-  const totalSessions = await prisma.diagnostic.count({
-    where: { createdAt: { gte: monthStart, lte: monthEnd } }
+  const totalSessions = await prisma.chatSession.count({
+    where: { updatedAt: { gte: monthStart, lte: monthEnd } }
   });
 
   const totalTechnicians = await prisma.user.count({

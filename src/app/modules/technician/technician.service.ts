@@ -372,10 +372,10 @@ const getShopOwnerDashboard = async (ownerId: string) => {
   const sun = startOfWeek(now, { weekStartsOn: 0 });
   const sat = endOfWeek(now, { weekStartsOn: 0 });
 
-  const diagnosticsThisWeek = await prisma.diagnostic.findMany({
+  const diagnosticsThisWeek = await prisma.chatSession.findMany({
     where: {
       ownerId,
-      createdAt: { gte: sun, lte: sat }
+      updatedAt: { gte: sun, lte: sat }
     }
   });
 
@@ -383,7 +383,7 @@ const getShopOwnerDashboard = async (ownerId: string) => {
   const diagnosticsActivity = weekInterval.map((day) => {
     const dayLabel = format(day, 'EEE'); // Sun, Mon...
     const count = diagnosticsThisWeek.filter((d) => 
-      format(d.createdAt, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
+      format(d.updatedAt, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
     ).length;
 
     return { day: dayLabel, sessions: count };
@@ -393,13 +393,13 @@ const getShopOwnerDashboard = async (ownerId: string) => {
   const monthStart = startOfMonth(now);
   const monthEnd = endOfMonth(now);
 
-  const monthDiagnostics = await prisma.diagnostic.findMany({
+  const monthDiagnostics = await prisma.chatSession.findMany({
     where: {
       ownerId,
-      createdAt: { gte: monthStart, lte: monthEnd }
+      updatedAt: { gte: monthStart, lte: monthEnd }
     },
     include: {
-      technician: {
+      user: {
         select: {
           id: true,
           fullName: true,
@@ -413,13 +413,13 @@ const getShopOwnerDashboard = async (ownerId: string) => {
   // Aggregate by technician
   const performanceMap: Record<string, any> = {};
   monthDiagnostics.forEach((d: any) => {
-    const techId = d.technicianId;
+    const techId = d.userId;
     if (!performanceMap[techId]) {
       performanceMap[techId] = {
         id: techId,
-        fullName: d.technician?.fullName || 'Deleted Technician',
-        email: d.technician?.email || 'N/A',
-        profileImage: d.technician?.profileImage || '',
+        fullName: d.user?.fullName || 'Deleted Technician',
+        email: d.user?.email || 'N/A',
+        profileImage: d.user?.profileImage || '',
         sessions: 0
       };
     }
