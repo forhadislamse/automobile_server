@@ -9,6 +9,8 @@ import { generateOtp } from "../../../helpars/generateOtp";
 import emailSender from "../../../shared/emailSender";
 import prisma from "../../../shared/prisma";
 import { registrationOtpTemplate } from "../../../helpars/template/registrationOtpTemplate";
+import { forgotPasswordTemplate } from "../../../helpars/template/forgotPasswordTemplate";
+import { resendOTPTemplate } from "../../../helpars/template/resendOTP";
 
 
 
@@ -236,8 +238,8 @@ const forgotPassword = async (payload: { email: string }) => {
   console.log(payload.email);
 
   try {
-    // const html = forgotPasswordTemplate(otp);
-    const html = `Here is your OTP code: ${otp}. It will expire in 5 minutes.`;
+    // const html = `Here is your OTP code: ${otp}. It will expire in 5 minutes.`;
+    const html = forgotPasswordTemplate(otp);
 
     if (userData.email) {
       await emailSender(userData.email, html, "Regwheat Password OTP");
@@ -274,7 +276,8 @@ const resendOtp = async (email: string) => {
   const otp = generateOtp(6);
   const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
   try {
-    const html = `Here is your new OTP code: ${otp}. It will expire in 5 minutes.`;
+    // const html = `Here is your new OTP code: ${otp}. It will expire in 5 minutes.`;
+    const html = resendOTPTemplate(otp);
 
     if (user.email) {
       await emailSender(user.email, html, "Resend OTP");
