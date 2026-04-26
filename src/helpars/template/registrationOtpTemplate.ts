@@ -79,7 +79,7 @@ export const registrationOtpTemplate = (otp: number) => `
             <h1 style="margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -0.5px;">
                 Welcome to <span style="color: #ffd700;">SmartAutoTech</span>
             </h1>
-            <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Let's verify your account! ✨</p>
+            <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9; color: #10af52ff">Let's verify your account! ✨</p>
         </div>
 
         <!-- 📱 MAIN CONTENT -->
