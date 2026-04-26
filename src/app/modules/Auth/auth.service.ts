@@ -295,7 +295,7 @@ const resendOtp = async (email: string) => {
     },
   });
 
-  return { otp };
+  return ;
 };
 
 // verify forgot password OTP
