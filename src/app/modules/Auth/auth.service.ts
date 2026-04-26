@@ -12,6 +12,7 @@ import { registrationOtpTemplate } from "../../../helpars/template/registrationO
 
 
 
+
 const createUserIntoDb = async (payload: any) => {
   console.log("Registration attempt: ", payload);
   const {
@@ -64,13 +65,14 @@ const createUserIntoDb = async (payload: any) => {
     });
     console.log("User successfully created in DB:", newUser.id);
 
-    // Send Registration OTP Email
-    try {
-      const html = registrationOtpTemplate(otp);
-      await emailSender(email, html, "Verify your SmartAutoTech Account");
-    } catch (error) {
-      console.error("Failed to send registration OTP email:", error);
-    }
+    // Send Registration OTP Email (Disabled as per request, OTP returned in response)
+    // try {
+    //   const html = registrationOtpTemplate(otp);
+    //   await emailSender(email, html, "Verify your SmartAutoTech Account");
+    // } catch (error) {
+    //   console.error("Failed to send registration OTP email:", error);
+    // }
+
   } catch (error) {
     console.error("Prisma error during user creation:", error);
     throw error;
@@ -92,7 +94,9 @@ const createUserIntoDb = async (payload: any) => {
     user: { ...newUser, password: undefined },
     token,
     refreshToken,
+    otp,
   };
+
 };
 
 
@@ -365,6 +369,7 @@ const verifyEmailOtp = async (payload: {
   });
 
   return ;
+
 };
 
 // reset password
