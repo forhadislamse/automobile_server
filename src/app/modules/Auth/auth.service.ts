@@ -368,7 +368,7 @@ const verifyEmailOtp = async (payload: {
     }
   });
 
-  return ;
+  return updatedUser;
 
 };
 
