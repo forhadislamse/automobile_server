@@ -96,7 +96,6 @@ const createUserIntoDb = async (payload: any) => {
     user: { ...newUser, password: undefined },
     token,
     refreshToken,
-    otp,
   };
 
 };
@@ -257,9 +256,7 @@ const forgotPassword = async (payload: { email: string }) => {
     },
   });
 
-  return {
-    otp,
-  };
+  return ;
 };
 
 // resend otp
