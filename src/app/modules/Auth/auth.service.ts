@@ -242,7 +242,7 @@ const forgotPassword = async (payload: { email: string }) => {
     const html = forgotPasswordTemplate(otp);
 
     if (userData.email) {
-      await emailSender(userData.email, html, "Regwheat Password OTP");
+      await emailSender(userData.email, html, "Reset Your Password – SmartAutoTech");
     }
   } catch (error) {
     console.error(`Failed to send OTP email:`, error);
@@ -280,7 +280,7 @@ const resendOtp = async (email: string) => {
     const html = resendOTPTemplate(otp);
 
     if (user.email) {
-      await emailSender(user.email, html, "Resend OTP");
+      await emailSender(user.email, html, "Resent OTP Code – SmartAutoTech");
     }
   } catch (error) {
     console.error(`Failed to send OTP email:`, error);

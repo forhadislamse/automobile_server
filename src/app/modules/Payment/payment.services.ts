@@ -352,7 +352,7 @@ const handleWebhook = async (payload: string, sig: string) => {
                 if (userForEmail && userForEmail.email) {
                     try {
                         const html = welcomeEmailTemplate(userForEmail.fullName || "Valued Owner");
-                        await emailSender(userForEmail.email, html, "Welcome to SmartAutoTech AI!");
+                        await emailSender(userForEmail.email, html, "Welcome to SmartAutoTech!");
                         console.log(`[WEBHOOK] Welcome email sent to ${userForEmail.email}`);
                     } catch (error) {
                         console.error("[WEBHOOK] Failed to send welcome email:", error);
