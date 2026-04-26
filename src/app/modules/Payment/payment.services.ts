@@ -81,7 +81,10 @@ const createSubscriptionIntent = async (userId: string, planId: string, duration
         throw new ApiError(404, 'User not found');
     }
 
-    // Removed hard block to allow upgrading from trial or buying multiple technician slots (buckets)
+    // Ensure email is verified before proceeding to payment
+    if (!user.isVerifyEmail) {
+        throw new ApiError(400, 'Please verify your email address before purchasing a subscription.');
+    }
 
     // 2. Fetch Subscription Plan
     const plan = await prisma.subscriptionPlan.findUnique({
