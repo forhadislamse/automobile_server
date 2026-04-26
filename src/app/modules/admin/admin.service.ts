@@ -17,6 +17,23 @@ const getDashboardStats = async () => {
     where: { status: { in: ['active', 'trialing'] }, expiresAt: { gt: now } }
   });
 
+  const activeSubscriptionsByPlanQuery = await prisma.userPlanSubscription.groupBy({
+    by: ['planId'],
+    where: { status: { in: ['active', 'trialing'] }, expiresAt: { gt: now } },
+    _count: { planId: true }
+  });
+
+  const plans = await prisma.subscriptionPlan.findMany({
+    where: { id: { in: activeSubscriptionsByPlanQuery.map(p => p.planId) } },
+    select: { id: true, name: true }
+  });
+
+  const planCounts: Record<string, number> = {};
+  activeSubscriptionsByPlanQuery.forEach(item => {
+    const planName = plans.find(p => p.id === item.planId)?.name || 'Unknown Plan';
+    planCounts[planName] = item._count.planId;
+  });
+
   const activeUsers = await prisma.user.count({
     where: { status: 'ACTIVE', isDeleted: false }
   });
@@ -117,7 +134,8 @@ const getDashboardStats = async () => {
       activeShops,
       activeSubscriptions,
       activeUsers,
-      aiSessionsToday
+      aiSessionsToday,
+      ...planCounts
     },
     recentUsers,
     activeUsersChart,
