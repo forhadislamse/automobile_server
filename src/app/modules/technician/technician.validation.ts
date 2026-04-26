@@ -10,7 +10,7 @@ const addTechnicianValidationSchema = z.object({
     }).email('Invalid email address'),
     passkey: z.string({
       required_error: 'Passkey is required',
-    }).min(6, 'Passkey must be at least 6 characters'),
+    }).min(8, 'Passkey must be at least 8 characters'),
   }),
 });
 
