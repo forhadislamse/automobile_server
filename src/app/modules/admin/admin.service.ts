@@ -25,12 +25,12 @@ const getDashboardStats = async () => {
 
   const plans = await prisma.subscriptionPlan.findMany({
     where: { id: { in: activeSubscriptionsByPlanQuery.map(p => p.planId) } },
-    select: { id: true, name: true }
+    select: { id: true, category: true }
   });
 
   const planCounts: Record<string, number> = {};
   activeSubscriptionsByPlanQuery.forEach(item => {
-    const planName = plans.find(p => p.id === item.planId)?.name || 'Unknown Plan';
+    const planName = plans.find(p => p.id === item.planId)?.category || 'Unknown Plan';
     planCounts[planName] = item._count.planId;
   });
 
