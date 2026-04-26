@@ -539,7 +539,7 @@ const confirmPayment = async (paymentId: string, paymentIntentId: string) => {
     if (user && user.email) {
         try {
             const html = welcomeEmailTemplate(user.fullName || "Valued Owner");
-            await emailSender(user.email, html, "Welcome to SmartAutoTech AI!");
+            await emailSender(user.email, html, "SmartAutoTech");
             console.log(`[CONFIRM_PAYMENT] Welcome email sent to ${user.email}`);
         } catch (error) {
             console.error("[CONFIRM_PAYMENT] Failed to send welcome email:", error);
