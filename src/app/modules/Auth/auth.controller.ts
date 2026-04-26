@@ -108,7 +108,7 @@ const verifyEmailOtp = catchAsync(
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: "Verify your email successfully",
+      message: " Your Email has been verified successfully. ",
       data: result,
     });
   }
