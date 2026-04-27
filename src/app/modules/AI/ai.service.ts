@@ -292,7 +292,33 @@ POLICIES:
   // 5. Get AI Response
   const resultText = await callAI(systemPrompt, finalPrompt, payload.image, personaConfig.model, history);
 
-  // 5. Save assistant message
+  // 6. Specialist Routing Detection (New Logic)
+  // If Shop Foreman says he's moving to a specialist, update the session persona
+  if (currentPersona === AI_TOOLS.SHOP_FOREMAN) {
+    let newPersona = null;
+
+    if (resultText.includes("Mechanical Diagnostics AI")) {
+      newPersona = AI_TOOLS.MECHANICAL_DIAGNOSTICS;
+    } else if (resultText.includes("Electrical Diagnostics AI")) {
+      newPersona = AI_TOOLS.ELECTRICAL_DIAGNOSTICS;
+    } else if (resultText.includes("Transmission Diagnostics AI")) {
+      newPersona = AI_TOOLS.TRANSMISSION_DIAGNOSTICS;
+    } else if (resultText.includes("OBD-II Code Interpreter AI")) {
+      newPersona = AI_TOOLS.OBD2_INTERPRETER;
+    } else if (resultText.includes("European Vehicle Specialist AI")) {
+      newPersona = AI_TOOLS.EUROPEAN_SPECIALIST;
+    }
+
+    if (newPersona) {
+      console.log(`[AI ROUTING] Shop Foreman routed to: ${newPersona}`);
+      await prisma.chatSession.update({
+        where: { id: session.id },
+        data: { persona: newPersona }
+      });
+    }
+  }
+
+  // 7. Save assistant message
   const assistantMessage = await prisma.chatMessage.create({
     data: {
       sessionId: session.id,
