@@ -1,5 +1,5 @@
 import { UserRole, SubscriptionStatus, Prisma, UserStatus } from '@prisma/client';
-import { startOfDay, endOfDay, startOfWeek, endOfWeek, eachDayOfInterval, format, subDays, startOfMonth, endOfMonth } from 'date-fns';
+import { startOfDay, endOfDay, startOfWeek, endOfWeek, eachDayOfInterval, format, subDays, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import prisma from '../../../shared/prisma';
 import { paginationHelper } from '../../../helpars/paginationHelper';
 
@@ -102,6 +102,12 @@ const getDashboardStats = async () => {
     where: { updatedAt: { gte: monthStart, lte: monthEnd } }
   });
 
+  const yearStart = startOfYear(now);
+  const yearEnd = endOfYear(now);
+  const yearlySessions = await prisma.chatSession.count({
+    where: { updatedAt: { gte: yearStart, lte: yearEnd } }
+  });
+
   const totalTechnicians = await prisma.user.count({
     where: { role: UserRole.TECHNICIAN, isDeleted: false }
   });
@@ -141,6 +147,7 @@ const getDashboardStats = async () => {
     activeUsersChart,
     aiSessions: {
       total: totalSessions,
+      yearly: yearlySessions,
       technicians: totalTechnicians
     },
     recentBilling
