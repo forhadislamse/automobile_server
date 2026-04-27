@@ -30,10 +30,13 @@ export const getPersonaConfig = (toolKey: string) => {
     const config = masterConfig.configs.find((c: any) => c.tool_key === toolKey);
     if (!config) return defaultConfig;
 
-    const guardrails = masterConfig.configs[0].global_guardrails.join('\n- ');
-    
+    // Get specific guardrails for this persona
+    const guardrails = config.global_guardrails && config.global_guardrails.length > 0
+        ? "\n\nGLOBAL GUARDRAILS:\n- " + config.global_guardrails.join('\n- ')
+        : "";
+
     return {
-        instructions: `${config.system_instructions}\n\nGLOBAL GUARDRAILS:\n- ${guardrails}`,
-        model: config.model // e.g., "gpt-5.4"
+        instructions: config.system_instructions + guardrails,
+        model: config.model || masterConfig.global_settings.default_model
     };
 };
