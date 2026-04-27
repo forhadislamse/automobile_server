@@ -6,7 +6,7 @@ import path from 'path';
  */
 export const getMasterAIConfig = () => {
     try {
-        const configPath = path.join(process.cwd(), 'smartautotech_gpt_master_config.json');
+        const configPath = path.join(process.cwd(), 'smartautotech_gpt_master_config_backup.json');
         const fileContent = fs.readFileSync(configPath, 'utf-8');
         return JSON.parse(fileContent);
     } catch (error) {
