@@ -277,8 +277,20 @@ POLICIES:
 - If an Electrical or Transmission issue is detected and those tools are locked, you must refuse the diagnostic and suggest an upgrade.
   `.trim();
 
-  // 4. Get AI Response
-  const resultText = await callAI(systemPrompt, finalPrompt, payload.image, personaConfig.model);
+  // 4. Get previous messages for context
+  const previousMessages = await prisma.chatMessage.findMany({
+    where: { sessionId: session.id },
+    orderBy: { createdAt: 'asc' },
+    take: 25, // Increased to 25 for better context retention in production
+  });
+
+  const history = previousMessages.map(msg => ({
+    role: msg.role,
+    content: msg.content
+  }));
+
+  // 5. Get AI Response
+  const resultText = await callAI(systemPrompt, finalPrompt, payload.image, personaConfig.model, history);
 
   // 5. Save assistant message
   const assistantMessage = await prisma.chatMessage.create({

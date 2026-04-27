@@ -111,7 +111,7 @@ export const validateAIToolAccess = async (userId: string, requestedTool: string
  * Helper to call OpenAI API for diagnostics.
  * If OPENAI_API_KEY is not provided, returns a simulated response for development.
  */
-export const callAI = async (systemPrompt: string, userPrompt: string, imageUrl?: string, modelOverride?: string) => {
+export const callAI = async (systemPrompt: string, userPrompt: string, imageUrl?: string, modelOverride?: string, history: any[] = []) => {
     const apiKey = config.ai.openai_api_key;
 
     if (!apiKey) {
@@ -143,12 +143,15 @@ Priority: Medium`;
             });
         }
 
+        const messages: any[] = [
+            { role: "system", content: systemPrompt },
+            ...history,
+            { role: "user", content: userContent }
+        ];
+
         const response = await openai.chat.completions.create({
             model: modelName,
-            messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: userContent }
-            ],
+            messages: messages,
             temperature: 0.7,
             max_tokens: 1200,
         });
