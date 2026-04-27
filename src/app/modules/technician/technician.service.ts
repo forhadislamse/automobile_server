@@ -132,7 +132,7 @@ const getShopTechnicians = async (ownerId: string) => {
   return technicians;
 };
 
-const updateTechnicianStatus = async (techId: string, ownerId: string, status: 'ACTIVE' | 'SUSPENDED' | 'BLOCKED') => {
+const updateTechnicianStatus = async (techId: string, ownerId: string, status: 'ACTIVE' | 'BLOCKED') => {
   const technician = await prisma.user.findFirst({
     where: { id: techId, ownerId: ownerId }
   });

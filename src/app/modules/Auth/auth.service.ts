@@ -133,7 +133,7 @@ const loginUser = async (payload: {
   if (userData.status === "BLOCKED" || userData.status === "SUSPENDED") {
     throw new ApiError(
       httpStatus.FORBIDDEN,
-      `Your account is ${userData.status.toLowerCase()}. Please contact your shop owner.`
+      `Your account is ${userData.status.toLowerCase()}. ${userData.role === 'TECHNICIAN' ? 'Please contact your shop owner.' : 'Please contact support.'}`
     );
   }
 
