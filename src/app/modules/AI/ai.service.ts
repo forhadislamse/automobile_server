@@ -243,16 +243,30 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt?
   const planName = planSubscription.plan.name;
   const allowedTools = getAllowedToolsForPlanCategory(planSubscription.plan.category);
 
-  // 3. Handle Locked Tool (Short-circuit without calling OpenAI)
+  // 3. Handle Locked Tool (Rescue Flow)
+  // If the current tool is locked, fall back to Shop Foreman instead of getting stuck
   if (!validation.hasAccess) {
-    const lockedMessage = await prisma.chatMessage.create({
-      data: {
-        sessionId: session.id,
-        role: 'assistant',
-        content: validation.message as string
-      }
+    console.log(`[AI ACCESS] Tool ${currentPersona} is locked. Falling back to Shop Foreman.`);
+    currentPersona = AI_TOOLS.SHOP_FOREMAN;
+
+    // Update session persona back to Shop Foreman in database
+    await prisma.chatSession.update({
+      where: { id: session.id },
+      data: { persona: AI_TOOLS.SHOP_FOREMAN }
     });
-    return lockedMessage;
+
+    // Re-validate access for Shop Foreman (always has access in basic+)
+    const foremanValidation = await validateAIToolAccess(userId, AI_TOOLS.SHOP_FOREMAN);
+    if (!foremanValidation.hasAccess) {
+      const lockedMessage = await prisma.chatMessage.create({
+        data: {
+          sessionId: session.id,
+          role: 'assistant',
+          content: foremanValidation.message as string
+        }
+      });
+      return lockedMessage;
+    }
   }
 
   // 4. Generate System Prompt from Master Config
