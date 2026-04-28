@@ -205,9 +205,67 @@ POLICIES:
   */
 
   // 8. Get AI Response (Normal Flow)
-  const resultText = await callAI(systemPrompt, finalPrompt, payload.image, personaConfig.model);
+  let resultText = await callAI(systemPrompt, finalPrompt, payload.image, personaConfig.model);
 
-  // 9. Save AI response message
+  // 9. Specialist Routing Detection (Enhanced Logic with Auto-Forward)
+  {
+    let newPersona = null;
+    if (resultText.includes("Mechanical Diagnostics AI")) {
+      newPersona = AI_TOOLS.MECHANICAL_DIAGNOSTICS;
+    } else if (resultText.includes("Electrical Diagnostics AI")) {
+      newPersona = AI_TOOLS.ELECTRICAL_DIAGNOSTICS;
+    } else if (resultText.includes("Transmission Diagnostics AI")) {
+      newPersona = AI_TOOLS.TRANSMISSION_DIAGNOSTICS;
+    } else if (resultText.includes("OBD-II Code Interpreter AI")) {
+      newPersona = AI_TOOLS.OBD2_INTERPRETER;
+    } else if (resultText.includes("European Vehicle Specialist AI")) {
+      newPersona = AI_TOOLS.EUROPEAN_SPECIALIST;
+    } else if (resultText.includes("Shop Foreman GPT")) {
+      newPersona = AI_TOOLS.SHOP_FOREMAN;
+    }
+
+    if (newPersona && newPersona !== effectivePersona) {
+      console.log(`[AI ROUTING] Persona updated in startNewChat to: ${newPersona}`);
+      await prisma.chatSession.update({
+        where: { id: session.id },
+        data: { persona: newPersona }
+      });
+
+      // --- AUTO-FORWARD LOGIC ---
+      const nextValidation = await validateAIToolAccess(userId, newPersona as AIToolType);
+      if (nextValidation.hasAccess) {
+        console.log(`[AI AUTO-FORWARD] Fetching seamless response in startNewChat from: ${newPersona}`);
+        
+        const nextPersonaConfig = getPersonaConfig(newPersona);
+        const nextAllowedTools = getAllowedToolsForPlanCategory(nextValidation.planSubscription.plan.category);
+        const nextLockedTools = getLockedToolsForPlanCategory(nextValidation.planSubscription.plan.category);
+        const nextPlanName = nextValidation.planSubscription.plan.name;
+        
+        const nextLockedToolsText = nextLockedTools.length > 0
+          ? `- Locked Tools (Upgrade Required): ${nextLockedTools.join(', ')}\n- CRITICAL INSTRUCTION: If the user's request involves any topic in this "Locked Tools" list, you are FORBIDDEN from giving any diagnostic advice, vehicle summaries, or assessments. You must provide ONLY the upgrade notice and STOP.`
+          : '- All professional tools are unlocked in this plan.';
+
+        const nextSystemPrompt = `
+CRITICAL POLICY:
+${nextLockedToolsText}
+- If a European vehicle is detected and the \"European Specialist\" tool is locked, you MUST REFUSE the diagnostic and suggest an upgrade IMMEDIATELY.
+- If an Electrical or Transmission issue is detected and those tools are locked, you MUST REFUSE the diagnostic and suggest an upgrade IMMEDIATELY.
+
+BASE INSTRUCTIONS:
+${nextPersonaConfig.instructions}
+
+CURRENT CONTEXT:
+- Shop Subscription Plan: "${nextPlanName}"
+- Available Tools in this plan: ${nextAllowedTools.join(', ')}
+        `.trim();
+
+        const nextResultText = await callAI(nextSystemPrompt, finalPrompt, payload.image, nextPersonaConfig.model);
+        resultText = `${resultText}\n\n---\n\n${nextResultText}`;
+      }
+    }
+  }
+
+  // 10. Save AI response message
   const assistantMessage = await prisma.chatMessage.create({
     data: {
       sessionId: session.id,
@@ -353,9 +411,9 @@ POLICIES:
   }));
 
   // 5. Get AI Response
-  const resultText = await callAI(systemPrompt, finalPrompt, payload.image, personaConfig.model, history);
+  let resultText = await callAI(systemPrompt, finalPrompt, payload.image, personaConfig.model, history);
 
-  // 6. Specialist Routing Detection (Enhanced Logic)
+  // 6. Specialist Routing Detection (Enhanced Logic with Auto-Forward)
   // Detect if the AI (Shop Foreman or any specialist) is routing to another specialist
   {
     let newPersona = null;
@@ -374,12 +432,47 @@ POLICIES:
       newPersona = AI_TOOLS.SHOP_FOREMAN;
     }
 
-    if (newPersona) {
+    if (newPersona && newPersona !== currentPersona) {
       console.log(`[AI ROUTING] Persona updated to: ${newPersona}`);
       await prisma.chatSession.update({
         where: { id: session.id },
         data: { persona: newPersona }
       });
+
+      // --- AUTO-FORWARD LOGIC ---
+      // Check if user has access to the new persona to prevent unauthorized auto-forward
+      const nextValidation = await validateAIToolAccess(userId, newPersona as AIToolType);
+      if (nextValidation.hasAccess) {
+        console.log(`[AI AUTO-FORWARD] Fetching seamless response from: ${newPersona}`);
+        
+        const nextPersonaConfig = getPersonaConfig(newPersona);
+        const nextAllowedTools = getAllowedToolsForPlanCategory(nextValidation.planSubscription.plan.category);
+        const nextLockedTools = getLockedToolsForPlanCategory(nextValidation.planSubscription.plan.category);
+        const nextPlanName = nextValidation.planSubscription.plan.name;
+        
+        const nextLockedToolsText = nextLockedTools.length > 0
+          ? `- Locked Tools (Upgrade Required): ${nextLockedTools.join(', ')}\n- CRITICAL INSTRUCTION: If the user's request involves any topic in this "Locked Tools" list, you are FORBIDDEN from giving any diagnostic advice, vehicle summaries, or assessments. You must provide ONLY the upgrade notice and STOP.`
+          : '- All professional tools are unlocked in this plan.';
+
+        const nextSystemPrompt = `
+CRITICAL POLICY:
+${nextLockedToolsText}
+- If a European vehicle is detected and the \"European Specialist\" tool is locked, you MUST REFUSE the diagnostic and suggest an upgrade IMMEDIATELY.
+- If an Electrical or Transmission issue is detected and those tools are locked, you MUST REFUSE the diagnostic and suggest an upgrade IMMEDIATELY.
+
+BASE INSTRUCTIONS:
+${nextPersonaConfig.instructions}
+
+CURRENT CONTEXT:
+- Shop Subscription Plan: "${nextPlanName}"
+- Available Tools in this plan: ${nextAllowedTools.join(', ')}
+        `.trim();
+
+        const nextResultText = await callAI(nextSystemPrompt, finalPrompt, payload.image, nextPersonaConfig.model, history);
+        
+        // Combine the hand-off message with the actual specialist response
+        resultText = `${resultText}\n\n---\n\n${nextResultText}`;
+      }
     }
   }
 
