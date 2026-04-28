@@ -31,14 +31,14 @@ const processAIRequest = async (userId: string, toolType: AIToolType, prompt: st
   const lockedTools = getLockedToolsForPlanCategory(planSubscription.plan.category);
 
   const lockedToolsText = lockedTools.length > 0
-    ? `- Locked Tools (Upgrade Required): ${lockedTools.join(', ')}\n- CRITICAL INSTRUCTION: If the user's request involves any topic in this "Locked Tools" list, you are FORBIDDEN from giving any diagnostic advice. You must IDENTIFY which specialized tool is needed and explain that it requires a higher plan (Professional or European).`
+    ? `- Locked Tools (Upgrade Required): ${lockedTools.join(', ')}\n- CRITICAL INSTRUCTION: If the user's request involves any topic in this "Locked Tools" list, you are FORBIDDEN from giving any diagnostic advice, vehicle summaries, or assessments. You must provide ONLY the upgrade notice and STOP.`
     : '- All professional tools are unlocked in this plan.';
 
   const systemPrompt = `
 CRITICAL POLICY:
 ${lockedToolsText}
-- If a European vehicle is detected and the \"European Specialist\" tool is locked, you MUST REFUSE the diagnostic and suggest an upgrade IMMEDIATELY. DO NOT provide any vehicle analysis or assessment.
-- If an Electrical or Transmission issue is detected and those tools are locked, you MUST REFUSE the diagnostic and suggest an upgrade IMMEDIATELY. DO NOT provide any vehicle analysis or assessment.
+- If a European vehicle is detected and the \"European Specialist\" tool is locked, you MUST REFUSE the diagnostic and suggest an upgrade IMMEDIATELY. DO NOT provide any vehicle analysis, assessment, or the structured "**Vehicle:**/**Concern:**" block.
+- If an Electrical or Transmission issue is detected and those tools are locked, you MUST REFUSE the diagnostic and suggest an upgrade IMMEDIATELY. DO NOT provide any vehicle analysis, assessment, or the structured "**Vehicle:**/**Concern:**" block. STOP immediately after the upgrade notice.
 
 BASE INSTRUCTIONS:
 ${personaConfig.instructions}
@@ -172,14 +172,14 @@ const startNewChat = async (userId: string, ownerId: string, payload: { persona:
   const lockedTools = getLockedToolsForPlanCategory(planSubscription.plan.category);
 
   const lockedToolsText = lockedTools.length > 0
-    ? `- Locked Tools (Upgrade Required): ${lockedTools.join(', ')}\n- CRITICAL INSTRUCTION: If the user's request involves any topic in this "Locked Tools" list, you are FORBIDDEN from giving any diagnostic advice. You must IDENTIFY which specialized tool is needed and explain that it requires a higher plan (Professional or European).`
+    ? `- Locked Tools (Upgrade Required): ${lockedTools.join(', ')}\n- CRITICAL INSTRUCTION: If the user's request involves any topic in this "Locked Tools" list, you are FORBIDDEN from giving any diagnostic advice, vehicle summaries, or assessments. You must provide ONLY the upgrade notice and STOP.`
     : '- All professional tools are unlocked in this plan.';
 
   const systemPrompt = `
 CRITICAL POLICY:
 ${lockedToolsText}
-- If a European vehicle is detected and the \"European Specialist\" tool is locked, you MUST REFUSE the diagnostic and suggest an upgrade IMMEDIATELY. DO NOT provide any vehicle analysis or assessment.
-- If an Electrical or Transmission issue is detected and those tools are locked, you MUST REFUSE the diagnostic and suggest an upgrade IMMEDIATELY. DO NOT provide any vehicle analysis or assessment.
+- If a European vehicle is detected and the \"European Specialist\" tool is locked, you MUST REFUSE the diagnostic and suggest an upgrade IMMEDIATELY. DO NOT provide any vehicle analysis, assessment, or the structured "**Vehicle:**/**Concern:**" block.
+- If an Electrical or Transmission issue is detected and those tools are locked, you MUST REFUSE the diagnostic and suggest an upgrade IMMEDIATELY. DO NOT provide any vehicle analysis, assessment, or the structured "**Vehicle:**/**Concern:**" block. STOP immediately after the upgrade notice.
 
 BASE INSTRUCTIONS:
 ${personaConfig.instructions}
@@ -307,14 +307,14 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt?
   const lockedTools = getLockedToolsForPlanCategory(planSubscription.plan.category);
 
   const lockedToolsText = lockedTools.length > 0
-    ? `- Locked Tools (Upgrade Required): ${lockedTools.join(', ')}\n- CRITICAL INSTRUCTION: If the user's request involves any topic in this "Locked Tools" list, you are FORBIDDEN from giving any diagnostic advice. You must IDENTIFY which specialized tool is needed and explain that it requires a higher plan (Professional or European).`
+    ? `- Locked Tools (Upgrade Required): ${lockedTools.join(', ')}\n- CRITICAL INSTRUCTION: If the user's request involves any topic in this "Locked Tools" list, you are FORBIDDEN from giving any diagnostic advice, vehicle summaries, or assessments. You must provide ONLY the upgrade notice and STOP.`
     : '- All professional tools are unlocked in this plan.';
 
   const systemPrompt = `
 CRITICAL POLICY:
 ${lockedToolsText}
-- If a European vehicle is detected and the \"European Specialist\" tool is locked, you MUST REFUSE the diagnostic and suggest an upgrade IMMEDIATELY. DO NOT provide any vehicle analysis or assessment.
-- If an Electrical or Transmission issue is detected and those tools are locked, you MUST REFUSE the diagnostic and suggest an upgrade IMMEDIATELY. DO NOT provide any vehicle analysis or assessment.
+- If a European vehicle is detected and the \"European Specialist\" tool is locked, you MUST REFUSE the diagnostic and suggest an upgrade IMMEDIATELY. DO NOT provide any vehicle analysis, assessment, or the structured "**Vehicle:**/**Concern:**" block.
+- If an Electrical or Transmission issue is detected and those tools are locked, you MUST REFUSE the diagnostic and suggest an upgrade IMMEDIATELY. DO NOT provide any vehicle analysis, assessment, or the structured "**Vehicle:**/**Concern:**" block. STOP immediately after the upgrade notice.
 
 BASE INSTRUCTIONS:
 ${personaConfig.instructions}
