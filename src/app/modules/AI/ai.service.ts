@@ -354,9 +354,9 @@ POLICIES:
   // 5. Get AI Response
   const resultText = await callAI(systemPrompt, finalPrompt, payload.image, personaConfig.model, history);
 
-  // 6. Specialist Routing Detection (New Logic)
-  // If Shop Foreman says he's moving to a specialist, update the session persona
-  if (currentPersona === AI_TOOLS.SHOP_FOREMAN) {
+  // 6. Specialist Routing Detection (Enhanced Logic)
+  // Detect if the AI (Shop Foreman or any specialist) is routing to another specialist
+  {
     let newPersona = null;
 
     if (resultText.includes("Mechanical Diagnostics AI")) {
@@ -369,10 +369,12 @@ POLICIES:
       newPersona = AI_TOOLS.OBD2_INTERPRETER;
     } else if (resultText.includes("European Vehicle Specialist AI")) {
       newPersona = AI_TOOLS.EUROPEAN_SPECIALIST;
+    } else if (resultText.includes("Shop Foreman GPT")) {
+      newPersona = AI_TOOLS.SHOP_FOREMAN;
     }
 
     if (newPersona) {
-      console.log(`[AI ROUTING] Shop Foreman routed to: ${newPersona}`);
+      console.log(`[AI ROUTING] Persona updated to: ${newPersona}`);
       await prisma.chatSession.update({
         where: { id: session.id },
         data: { persona: newPersona }

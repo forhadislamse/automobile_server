@@ -37,6 +37,6 @@ export const getPersonaConfig = (toolKey: string) => {
 
     return {
         instructions: config.system_instructions + guardrails,
-        model: config.model || masterConfig.global_settings.default_model
+        model: config.model || (masterConfig.global_settings?.default_model) || "gpt-4o"
     };
 };
