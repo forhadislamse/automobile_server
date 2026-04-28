@@ -35,6 +35,21 @@ const processAIRequest = async (userId: string, toolType: AIToolType, prompt: st
     : '- All professional tools are unlocked in this plan.';
 
   const systemPrompt = `
+CRITICAL POLICY:
+${lockedToolsText}
+- If a European vehicle is detected and the \"European Specialist\" tool is locked, you MUST REFUSE the diagnostic and suggest an upgrade IMMEDIATELY. DO NOT provide any vehicle analysis or assessment.
+- If an Electrical or Transmission issue is detected and those tools are locked, you MUST REFUSE the diagnostic and suggest an upgrade IMMEDIATELY. DO NOT provide any vehicle analysis or assessment.
+
+BASE INSTRUCTIONS:
+${personaConfig.instructions}
+
+CURRENT CONTEXT:
+- Shop Subscription Plan: "${planName}"
+- Available Tools in this plan: ${toolNames}
+  `.trim();
+
+  /* OLD PROMPT STRUCTURE (FOR REFERENCE)
+  const systemPrompt = `
 ${personaConfig.instructions}
 
 CURRENT CONTEXT:
@@ -46,6 +61,7 @@ POLICIES:
 - If a European vehicle is detected and the "European Specialist" tool is locked, you must refuse the diagnostic and suggest an upgrade.
 - If an Electrical or Transmission issue is detected and those tools are locked, you must refuse the diagnostic and suggest an upgrade.
   `.trim();
+  */
 
   // 4. Handle Locked Tool (Short-circuit without calling OpenAI)
   if (!validation.hasAccess) {
@@ -160,6 +176,21 @@ const startNewChat = async (userId: string, ownerId: string, payload: { persona:
     : '- All professional tools are unlocked in this plan.';
 
   const systemPrompt = `
+CRITICAL POLICY:
+${lockedToolsText}
+- If a European vehicle is detected and the \"European Specialist\" tool is locked, you MUST REFUSE the diagnostic and suggest an upgrade IMMEDIATELY. DO NOT provide any vehicle analysis or assessment.
+- If an Electrical or Transmission issue is detected and those tools are locked, you MUST REFUSE the diagnostic and suggest an upgrade IMMEDIATELY. DO NOT provide any vehicle analysis or assessment.
+
+BASE INSTRUCTIONS:
+${personaConfig.instructions}
+
+CURRENT CONTEXT:
+- Shop Subscription Plan: "${planName}"
+- Available Tools in this plan: ${toolNames}
+  `.trim();
+
+  /* OLD PROMPT STRUCTURE (FOR REFERENCE)
+  const systemPrompt = `
 ${personaConfig.instructions}
 
 CURRENT CONTEXT:
@@ -171,6 +202,7 @@ POLICIES:
 - If a European vehicle is detected and the "European Specialist" tool is locked, you must refuse the diagnostic and suggest an upgrade.
 - If an Electrical or Transmission issue is detected and those tools are locked, you must refuse the diagnostic and suggest an upgrade.
   `.trim();
+  */
 
   // 8. Get AI Response (Normal Flow)
   const resultText = await callAI(systemPrompt, finalPrompt, payload.image, personaConfig.model);
@@ -279,6 +311,21 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt?
     : '- All professional tools are unlocked in this plan.';
 
   const systemPrompt = `
+CRITICAL POLICY:
+${lockedToolsText}
+- If a European vehicle is detected and the \"European Specialist\" tool is locked, you MUST REFUSE the diagnostic and suggest an upgrade IMMEDIATELY. DO NOT provide any vehicle analysis or assessment.
+- If an Electrical or Transmission issue is detected and those tools are locked, you MUST REFUSE the diagnostic and suggest an upgrade IMMEDIATELY. DO NOT provide any vehicle analysis or assessment.
+
+BASE INSTRUCTIONS:
+${personaConfig.instructions}
+
+CURRENT CONTEXT:
+- Shop Subscription Plan: "${planName}"
+- Available Tools in this plan: ${toolNames}
+  `.trim();
+
+  /* OLD PROMPT STRUCTURE (FOR REFERENCE)
+  const systemPrompt = `
 ${personaConfig.instructions}
 
 CURRENT CONTEXT:
@@ -290,6 +337,7 @@ POLICIES:
 - If a European vehicle is detected and the "European Specialist" tool is locked, you must refuse the diagnostic and suggest an upgrade.
 - If an Electrical or Transmission issue is detected and those tools are locked, you must refuse the diagnostic and suggest an upgrade.
   `.trim();
+  */
 
   // 4. Get previous messages for context
   const previousMessages = await prisma.chatMessage.findMany({
