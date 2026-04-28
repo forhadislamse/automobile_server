@@ -339,14 +339,15 @@ POLICIES:
   `.trim();
   */
 
-  // 4. Get previous messages for context
+  // 4. Get previous messages for context (Latest 25)
   const previousMessages = await prisma.chatMessage.findMany({
     where: { sessionId: session.id },
-    orderBy: { createdAt: 'asc' },
-    take: 25, // Increased to 25 for better context retention in production
+    orderBy: { createdAt: 'desc' },
+    take: 35,
   });
 
-  const history = previousMessages.map(msg => ({
+  // Reverse to maintain chronological order for AI context
+  const history = previousMessages.reverse().map(msg => ({
     role: msg.role,
     content: msg.content
   }));
