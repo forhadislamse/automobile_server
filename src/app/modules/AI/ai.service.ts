@@ -385,7 +385,14 @@ ${personaConfig.instructions}
 CURRENT CONTEXT:
 - Shop Subscription Plan: "${planName}"
 - Available Tools in this plan: ${toolNames}
+
   `.trim();
+
+//   ${lockedToolsText}
+
+// POLICIES:
+// - If a European vehicle is detected and the "European Specialist" tool is locked, you MUST refuse the diagnostic and suggest an upgrade.
+// - If an Electrical or Transmission issue is detected and those tools are locked, you MUST refuse the diagnostic and suggest an upgrade.
 
   /* OLD PROMPT STRUCTURE (FOR REFERENCE)
   const systemPrompt = `
