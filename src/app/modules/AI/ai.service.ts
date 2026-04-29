@@ -369,17 +369,16 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt?
     : '- All professional tools are unlocked in this plan.';
 
   const systemPrompt = `
-CRITICAL POLICY:
-${lockedToolsText}
-- If a European vehicle is detected and the \"European Specialist\" tool is locked, you MUST REFUSE the diagnostic and suggest an upgrade IMMEDIATELY. DO NOT provide any vehicle analysis, assessment, or the structured "**Vehicle:**/**Concern:**" block.
-- If an Electrical or Transmission issue is detected and those tools are locked, you MUST REFUSE the diagnostic and suggest an upgrade IMMEDIATELY. DO NOT provide any vehicle analysis, assessment, or the structured "**Vehicle:**/**Concern:**" block. STOP immediately after the upgrade notice.
-
-BASE INSTRUCTIONS:
 ${personaConfig.instructions}
 
 CURRENT CONTEXT:
 - Shop Subscription Plan: "${planName}"
 - Available Tools in this plan: ${toolNames}
+${lockedToolsText}
+
+POLICIES:
+- If a European vehicle is detected and the "European Specialist" tool is locked, you MUST refuse the diagnostic and suggest an upgrade.
+- If an Electrical or Transmission issue is detected and those tools are locked, you MUST refuse the diagnostic and suggest an upgrade.
   `.trim();
 
   /* OLD PROMPT STRUCTURE (FOR REFERENCE)
