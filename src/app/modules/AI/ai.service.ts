@@ -369,16 +369,22 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt?
     : '- All professional tools are unlocked in this plan.';
 
   const systemPrompt = `
+### CRITICAL SUBSCRIPTION POLICY (MANDATORY) ###
+The following tools are LOCKED for this user: ${lockedTools.join(', ')}
+
+IF THE USER ASKS ABOUT A LOCKED TOPIC (e.g., Electrical, Transmission, or European vehicles if locked):
+1. YOU ARE STRICTLY FORBIDDEN FROM GIVING ANY DIAGNOSTIC ADVICE, TEST STEPS, THEORIES, OR VEHICLE SUMMARIES.
+2. DO NOT USE THE "**Vehicle:**/**Concern:**" STRUCTURE.
+3. PROVIDE ONLY THE UPGRADE NOTICE AND STOP IMMEDIATELY.
+4. DO NOT BE "HELPFUL". DO NOT GIVE "INITIAL" ADVICE. ANY TECHNICAL ADVICE ON A LOCKED TOPIC IS A VIOLATION OF SYSTEM POLICY.
+
+##############################################
+
 ${personaConfig.instructions}
 
 CURRENT CONTEXT:
 - Shop Subscription Plan: "${planName}"
 - Available Tools in this plan: ${toolNames}
-${lockedToolsText}
-
-POLICIES:
-- If a European vehicle is detected and the "European Specialist" tool is locked, you MUST refuse the diagnostic and suggest an upgrade.
-- If an Electrical or Transmission issue is detected and those tools are locked, you MUST refuse the diagnostic and suggest an upgrade.
   `.trim();
 
   /* OLD PROMPT STRUCTURE (FOR REFERENCE)
