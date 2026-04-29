@@ -414,10 +414,10 @@ POLICIES:
   let resultText = await callAI(systemPrompt, finalPrompt, payload.image, personaConfig.model, history);
 
   // 6. Specialist Routing Detection (Enhanced Logic with Auto-Forward)
-  // Detect if the AI (Shop Foreman or any specialist) is routing to another specialist
-  {
-    let newPersona = null;
-
+  // 6. Detect if the AI suggested a persona change
+  if (resultText.includes("Moving you to") || resultText.includes("Hand this to") || resultText.includes("Route this to")) {
+    let newPersona: string | null = null;
+    
     if (resultText.includes("Mechanical Diagnostics AI")) {
       newPersona = AI_TOOLS.MECHANICAL_DIAGNOSTICS;
     } else if (resultText.includes("Electrical Diagnostics AI")) {
