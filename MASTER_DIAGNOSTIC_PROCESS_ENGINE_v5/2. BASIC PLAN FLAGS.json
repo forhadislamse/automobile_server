@@ -1,0 +1,10 @@
+{
+  "core_engine": true,
+  "pattern_injection": false,
+  "time_optimization": false,
+  "advanced_branching": false,
+  "scan_data_interpretation": false,
+  "intermittent_handling": false,
+  "euro_mode": false,
+  "control_module_strategy": false
+}
