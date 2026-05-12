@@ -5,43 +5,7 @@ import { AIController } from './ai.controller';
 
 const router = express.Router();
 
-router.post(
-  '/shop-foreman',
-  auth(UserRole.USER, UserRole.TECHNICIAN),
-  AIController.shopForemanAI
-);
-
-router.post(
-  '/mechanical-diagnostics',
-  auth(UserRole.USER, UserRole.TECHNICIAN),
-  AIController.mechanicalDiagnosticsAI
-);
-
-router.post(
-  '/obd2-interpreter',
-  auth(UserRole.USER, UserRole.TECHNICIAN),
-  AIController.obd2InterpreterAI
-);
-
-router.post(
-  '/electrical-diagnostics',
-  auth(UserRole.USER, UserRole.TECHNICIAN),
-  AIController.electricalDiagnosticsAI
-);
-
-router.post(
-  '/transmission-diagnostics',
-  auth(UserRole.USER, UserRole.TECHNICIAN),
-  AIController.transmissionDiagnosticsAI
-);
-
-router.post(
-  '/european-specialist',
-  auth(UserRole.USER, UserRole.TECHNICIAN),
-  AIController.europeanSpecialistAI
-);
-
-// Chat Session Management
+// Unified Master Diagnostic Session Management
 router.post(
   '/sessions',
   auth(UserRole.USER, UserRole.TECHNICIAN),

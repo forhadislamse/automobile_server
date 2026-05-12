@@ -234,6 +234,16 @@ model ChatSession {
   ownerId   String        @db.ObjectId // The shop owner who owns this data
   persona   String // Which AI tool (Shop Foreman AI, Mechanical, etc.)
   title     String? // Auto-generated title for the chat
+  
+  // --- New Diagnostic State Tracking Fields ---
+  currentStep             Int               @default(0)
+  vehicleData             Json?             // { year, make, model, engine }
+  activeConcern           String?
+  expectedOptions         String[]          @default([])
+  pausedConcerns          Json?             // Array of { concern, paused_at_step, vehicleData }
+  diagnosticStatus        DiagnosticStatus  @default(ACTIVE)
+  // --------------------------------------------
+
   messages  ChatMessage[]
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
@@ -251,4 +261,10 @@ model ChatMessage {
   createdAt DateTime    @default(now())
 
   @@map("chat_messages")
+}
+
+enum DiagnosticStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
 }

@@ -6,7 +6,7 @@ import path from 'path';
  */
 export const getMasterAIConfig = () => {
     try {
-        const configPath = path.join(process.cwd(), 'smartautotech_gpt_master_config_backup.json');
+        const configPath = path.join(process.cwd(), 'smartautotech_gpt_master_config.json');
         const fileContent = fs.readFileSync(configPath, 'utf-8');
         return JSON.parse(fileContent);
     } catch (error) {
@@ -17,26 +17,19 @@ export const getMasterAIConfig = () => {
 
 /**
  * Gets the system instructions, guardrails, and model for a specific tool key
+ * (Maintains compatibility with legacy routing if needed)
  */
 export const getPersonaConfig = (toolKey: string) => {
     const masterConfig = getMasterAIConfig();
     const defaultConfig = {
         instructions: "You are a helpful automotive diagnostic assistant.",
-        model: null
+        model: "gpt-4o"
     };
 
-    if (!masterConfig) return defaultConfig;
-
-    const config = masterConfig.configs.find((c: any) => c.tool_key === toolKey);
-    if (!config) return defaultConfig;
-
-    // Get specific guardrails for this persona
-    const guardrails = config.global_guardrails && config.global_guardrails.length > 0
-        ? "\n\nGLOBAL GUARDRAILS:\n- " + config.global_guardrails.join('\n- ')
-        : "";
+    if (!masterConfig || !masterConfig.master_engine) return defaultConfig;
 
     return {
-        instructions: config.system_instructions + guardrails,
-        model: config.model || (masterConfig.global_settings?.default_model) || "gpt-4o"
+        instructions: masterConfig.master_engine.instructions,
+        model: masterConfig.master_engine.model || "gpt-4o"
     };
 };

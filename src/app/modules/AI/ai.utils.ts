@@ -3,57 +3,48 @@ import httpStatus from 'http-status';
 import OpenAI from 'openai';
 import prisma from '../../../shared/prisma';
 import ApiError from '../../../errors/ApiErrors';
-import { AIToolType } from './ai.constants';
 import { getMasterAIConfig } from './ai.config';
 import config from '../../../config';
 
-export const getAllowedToolsForPlanCategory = (category: string) => {
+/**
+ * Gets the feature flags for a specific plan category from the master config
+ */
+export const getPlanFeatureFlags = (category: string) => {
   const masterConfig = getMasterAIConfig();
-  if (!masterConfig) return [];
+  if (!masterConfig || !masterConfig.plan_features) return null;
   
-  const allConfigs = masterConfig.configs;
-
-  if (category === 'BASIC') {
-    // Basic: Only Foreman, Mechanical, and OBD2 (standard tools that are not advanced)
-    const basicToolKeys = ['shop_foreman_gpt', 'mechanical_diagnostics_gpt', 'obd2_code_interpreter_gpt'];
-    return allConfigs
-      .filter((c: any) => basicToolKeys.includes(c.tool_key))
-      .map((c: any) => c.tool_key);
-  }
-  
-  if (category === 'PROFESSIONAL') {
-    // Professional: All "standard" tools, excluding "premium" (European)
-    return allConfigs
-      .filter((c: any) => c.subscription_tier === 'standard')
-      .map((c: any) => c.tool_key);
-  }
-
-  if (category === 'EUROPEAN') {
-    // European: Everything
-    return allConfigs.map((c: any) => c.tool_key);
-  }
-
-  return [];
+  return masterConfig.plan_features[category] || masterConfig.plan_features['BASIC'];
 };
 
 /**
- * Gets the list of tools NOT available in the current plan for upgrade suggestions
+ * Gets the formatted list of upgrades (Instructions) for the AI based on the user's plan
  */
-export const getLockedToolsForPlanCategory = (category: string) => {
+export const getPlanUpgradePrompts = (category: string) => {
   const masterConfig = getMasterAIConfig();
-  if (!masterConfig) return [];
-  
-  const allowedTools = getAllowedToolsForPlanCategory(category);
-  return masterConfig.configs
-    .filter((c: any) => !allowedTools.includes(c.tool_key))
-    .map((c: any) => c.display_name);
+  const flags = getPlanFeatureFlags(category);
+  if (!masterConfig || !flags) return "";
+
+  let upgradePrompt = "\n### ACTIVE UPGRADES FOR THIS SESSION ###\n";
+  const upgrades = masterConfig.master_engine.upgrades;
+
+  if (flags.pattern_injection) upgradePrompt += `${upgrades.pattern_injection}\n\n`;
+  if (flags.time_optimization) upgradePrompt += `${upgrades.time_optimization}\n\n`;
+  if (flags.advanced_branching) upgradePrompt += `${upgrades.advanced_branching}\n\n`;
+  if (flags.euro_mode) upgradePrompt += `${upgrades.euro_mode}\n\n`;
+  if (flags.intermittent_handling) upgradePrompt += `${upgrades.intermittent_handling}\n\n`;
+  if (flags.contradiction_control) upgradePrompt += `${upgrades.contradiction_control}\n\n`;
+  if (flags.dead_path_recovery) upgradePrompt += `${upgrades.dead_path_recovery}\n\n`;
+  if (flags.scan_data_interpretation) upgradePrompt += `${upgrades.scan_data_interpretation}\n\n`;
+  if (flags.control_module_strategy) upgradePrompt += `${upgrades.control_module_strategy}\n\n`;
+  if (flags.shop_efficiency_layer) upgradePrompt += `${upgrades.shop_efficiency_layer}\n\n`;
+
+  return upgradePrompt;
 };
 
 /**
- * Validates if the current user (Technician or Owner) has access to a specific AI tool
- * based on the Shop Owner's active subscription.
+ * Validates if the current user has an active subscription and returns plan details
  */
-export const validateAIToolAccess = async (userId: string, requestedTool: string) => {
+export const validateAISubscription = async (userId: string) => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { id: true, role: true, ownerId: true }
@@ -63,14 +54,12 @@ export const validateAIToolAccess = async (userId: string, requestedTool: string
     throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
   }
 
-  // Find the Shop Owner ID
   const ownerId = user.role === UserRole.TECHNICIAN ? user.ownerId : user.id;
 
   if (!ownerId) {
     throw new ApiError(httpStatus.FORBIDDEN, 'No shop owner associated with this account');
   }
 
-  // Fetch the Active Plan Subscription for the owner
   const planSubscription = await prisma.userPlanSubscription.findFirst({
     where: {
       ownerId: ownerId,
@@ -81,49 +70,42 @@ export const validateAIToolAccess = async (userId: string, requestedTool: string
   });
 
   if (!planSubscription) {
-    throw new ApiError(httpStatus.PAYMENT_REQUIRED, 'Active subscription required to access AI tools');
+    throw new ApiError(httpStatus.PAYMENT_REQUIRED, 'Active subscription required to access AI diagnostics');
   }
 
-  // Determine dynamically allowed tools
-  const allowedTools = getAllowedToolsForPlanCategory(planSubscription.plan.category);
-  
-  if (!allowedTools.includes(requestedTool)) {
-    // Determine which plan is needed
-    const masterConfig = getMasterAIConfig();
-    const toolConfig = masterConfig?.configs.find((c: any) => c.tool_key === requestedTool);
-    const requiredTier = toolConfig?.subscription_tier || 'professional';
-    const planName = requiredTier === 'premium' ? 'European Specialist' : 'Professional Shop';
-
-    return {
-      hasAccess: false,
-      planSubscription,
-      message: `Access to the specialized "${toolConfig?.display_name || requestedTool}" tool is not available in your current ${planSubscription.plan.name}. This feature is included in the ${planName} plan. Please contact your shop owner to upgrade your subscription to access this advanced diagnostic capability.`
-    };
-  }
-
-  return {
-    hasAccess: true,
-    planSubscription
-  };
+  return planSubscription;
 };
 
 /**
  * Helper to call OpenAI API for diagnostics.
- * If OPENAI_API_KEY is not provided, returns a simulated response for development.
+ * Supports JSON response format for v5 engine.
  */
-export const callAI = async (systemPrompt: string, userPrompt: string, imageUrl?: string, modelOverride?: string, history: any[] = []) => {
+export const callAI = async (
+    systemPrompt: string, 
+    userPrompt: string, 
+    imageUrl?: string, 
+    modelOverride?: string, 
+    history: any[] = [],
+    jsonMode: boolean = false
+) => {
     const apiKey = config.ai.openai_api_key;
 
     if (!apiKey) {
-        console.warn("OPENAI_API_KEY not found in config. Returning simulated response.");
-        // Simulated delay to mimic network latency
+        console.warn("OPENAI_API_KEY not found in config. Returning simulated JSON response.");
         await new Promise(resolve => setTimeout(resolve, 1500));
         
-        return `[SIMULATED DIAGNOSTIC]
-Analysis of: "${userPrompt}" ${imageUrl ? "(Image analysis included)" : ""}
-Potential Cause: Based on typical patterns, this issue often stems from intermittent signal loss in the primary sensor circuit.
-Recommended Action: Inspect the wiring harness for signs of wear or corrosion. Test the sensor output voltage using a multimeter to ensure it's within factory specifications.
-Priority: Medium`;
+        return JSON.stringify({
+            vehicle: "Simulated Vehicle",
+            concern: userPrompt,
+            system_focus: "Mechanical",
+            current_assessment: "Simulated analysis in development mode.",
+            step_number: 1,
+            step_title: "Initial Check",
+            instruction: "Simulated instruction for development.",
+            what_to_check: "Visual confirmation.",
+            response_options: ["Yes", "No"],
+            state_action: "awaiting_response"
+        });
     }
 
     try {
@@ -131,9 +113,9 @@ Priority: Medium`;
             apiKey: apiKey,
         });
 
-        const modelName = modelOverride || config.ai.model_name;
+        const masterConfig = getMasterAIConfig();
+        const modelName = modelOverride || masterConfig?.master_engine?.model || config.ai.model_name;
 
-        // Build the message content for OpenAI
         const userContent: any[] = [{ type: "text", text: userPrompt }];
         
         if (imageUrl) {
@@ -149,16 +131,19 @@ Priority: Medium`;
             { role: "user", content: userContent }
         ];
 
+        const maxTokens = masterConfig?.master_engine?.max_output_tokens || 1200;
+
         const response = await openai.chat.completions.create({
             model: modelName,
             messages: messages,
-            temperature: 0.7,
-            max_tokens: 1200,
+            temperature: 0.1, // Lower temperature for more consistent diagnostic steps
+            max_tokens: maxTokens,
+            response_format: jsonMode ? { type: "json_object" } : undefined
         });
 
-        return response.choices[0].message.content || "No response from AI.";
+        return response.choices[0].message.content || "{}";
     } catch (error: any) {
         console.error("OpenAI API Error:", error.message);
-        return `AI Service Error: ${error.message}. Please check your API configuration.`;
+        throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, `AI Service Error: ${error.message}`);
     }
 };
