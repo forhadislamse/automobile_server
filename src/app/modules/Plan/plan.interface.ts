@@ -16,6 +16,7 @@ export interface ISubscriptionPlan {
     currency?: string;
     technicianLimit: number;
     hasTrial: boolean;
+    baseIncludedText?: string;
     features: IPlanFeature[];
     isActive?: boolean;
 }

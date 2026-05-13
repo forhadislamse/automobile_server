@@ -17,6 +17,7 @@ direction.
     ],
     technicianLimit: 3,
     hasTrial: false,
+    baseIncludedText: '',
     isActive: true,
     features: [
       { name: 'Full diagnostic process engine (strict step control)', isActive: true },
@@ -42,6 +43,7 @@ direction.
     ],
     technicianLimit: 5,
     hasTrial: true,
+    baseIncludedText: 'Everything in Basic +',
     isActive: true,
     features: [
       { name: 'Known Failure Pattern Injection', isActive: true },
@@ -66,6 +68,7 @@ misdiagnosed.`,
     ],
     technicianLimit: 5,
     hasTrial: false,
+    baseIncludedText: 'Everything in Pro +',
     isActive: true,
     features: [
       { name: 'European Vehicle Mode', isActive: true },

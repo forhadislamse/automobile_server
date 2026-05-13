@@ -162,10 +162,11 @@ model SubscriptionPlan {
   description     String        @default("") // Marketing description text
   currency        String        @default("USD") // Default currency
   prices          PlanPrice[] // Nested pricing options
-  technicianLimit Int // e.g. 3, 5
-  hasTrial        Boolean       @default(false)
-  features        PlanFeature[]
-  isActive        Boolean       @default(true)
+  technicianLimit  Int // e.g. 3, 5
+  hasTrial         Boolean       @default(false)
+  baseIncludedText String?       @default("") // e.g. "Everything in Basic +"
+  features         PlanFeature[]
+  isActive         Boolean       @default(true)
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
