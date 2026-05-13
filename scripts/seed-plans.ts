@@ -6,7 +6,10 @@ const plans: any[] = [
   {
     category: 'BASIC',
     name: 'Basic Shop Plan',
-    description: 'Small teams handling everyday diagnostics who want to reduce guesswork and save time.',
+    description: `Structured, step-by-step diagnostics that eliminate guesswork and guide technicians
+through validated testing. Built for everyday repairs with consistent, foreman-level
+direction.
+`,
     currency: 'USD',
     prices: [
       { duration: 'Monthly', price: 99 },
@@ -16,21 +19,22 @@ const plans: any[] = [
     hasTrial: false,
     isActive: true,
     features: [
-      'Full diagnostic process engine (strict step control)',
-      'Mechanical + basic electrical + OBD-II flow',
-      'Standard branching logic',
-      'Core test types (visual, spark, fuel, compression)',
-      'Known failure pattern injection',
-      'Intermittent fault strategy',
-      'Advanced scan data interpretation',
-      'Euro intelligence',
-      'Time optimization bias',
+      { name: 'Full diagnostic process engine (strict step control)', isActive: true },
+      { name: 'Mechanical + basic electrical + OBD-II flow', isActive: true },
+      { name: 'Standard branching logic', isActive: true },
+      { name: 'Core test types (visual, spark, fuel, compression)', isActive: true },
+      { name: 'Known failure pattern injection', isActive: false },
+      { name: 'Intermittent fault strategy', isActive: false },
+      { name: 'Advanced scan data interpretation', isActive: false },
+      { name: 'Euro intelligence', isActive: false },
+      { name: 'Time optimization bias', isActive: false },
     ],
   },
   {
     category: 'PROFESSIONAL',
     name: 'Professional Shop Plan',
-    description: 'Adds faster diagnostic paths, guidance on known failure patterns, advanced branching, and support for scan data.',
+    description: `Adds faster diagnostic paths, guidance on known failure patterns, advanced branching, and support for scan data. Designed to reduce diagnostic time, improve accuracy, and minimize comebacks.
+`,
     currency: 'USD',
     prices: [
       { duration: 'Monthly', price: 159 },
@@ -40,21 +44,21 @@ const plans: any[] = [
     hasTrial: true,
     isActive: true,
     features: [
-      'Everything in Basic +',
-      'Known Failure Pattern Injection',
-      'Time-to-Diagnosis Optimization',
-      'Advanced branching logic (load, temp, RPM)',
-      'Electrical depth (voltage drop, signal testing)',
-      'Scan data validation (basic interpretation)',
-      'Intermittent fault intelligence',
-      'Euro-specific logic',
-      'Deep control module strategy',
+      { name: 'Known Failure Pattern Injection', isActive: true },
+      { name: 'Time-to-Diagnosis Optimization', isActive: true },
+      { name: 'Advanced branching logic (load, temp, RPM)', isActive: true },
+      { name: 'Electrical depth (voltage drop, signal testing)', isActive: true },
+      { name: 'Scan data validation (basic interpretation)', isActive: true },
+      { name: 'Intermittent fault intelligence', isActive: false },
+      { name: 'Euro-specific logic', isActive: false },
+      { name: 'Deep control module strategy', isActive: false },
     ],
   },
   {
     category: 'EUROPEAN',
     name: 'European Specialist Plan',
-    description: 'Includes advanced diagnostics for European vehicles, intermittent faults, control-module issues, and no-code conditions.',
+    description: `Includes advanced diagnostics for European vehicles, intermittent faults, control-module issues, and no-code conditions. Built for shops handling complex jobs that are often
+misdiagnosed.`,
     currency: 'USD',
     prices: [
       { duration: 'Monthly', price: 219 },
@@ -64,13 +68,12 @@ const plans: any[] = [
     hasTrial: false,
     isActive: true,
     features: [
-      'Everything in Pro +',
-      'European Vehicle Mode',
-      'Intermittent Fault Handling Engine',
-      'Control module diagnostic strategy',
-      'Hidden fault detection logic (no-code scenarios)',
-      'Deep scan data interpretation',
-      'Known weak-point prioritization (timing chain, carbon, PCV, etc.)',
+      { name: 'European Vehicle Mode', isActive: true },
+      { name: 'Intermittent Fault Handling Engine', isActive: true },
+      { name: 'Control module diagnostic strategy', isActive: true },
+      { name: 'Hidden fault detection logic (no-code scenarios)', isActive: true },
+      { name: 'Deep scan data interpretation', isActive: true },
+      { name: 'Known weak-point prioritization (timing chain, carbon, PCV, etc.)', isActive: true },
     ],
   },
 ];

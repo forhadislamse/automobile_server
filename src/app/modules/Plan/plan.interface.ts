@@ -3,6 +3,11 @@ export interface IPlanPrice {
     price: number;
 }
 
+export interface IPlanFeature {
+    name: string;
+    isActive: boolean;
+}
+
 export interface ISubscriptionPlan {
     category: 'BASIC' | 'PROFESSIONAL' | 'EUROPEAN';
     name: string;
@@ -11,6 +16,6 @@ export interface ISubscriptionPlan {
     currency?: string;
     technicianLimit: number;
     hasTrial: boolean;
-    features: string[];
+    features: IPlanFeature[];
     isActive?: boolean;
 }

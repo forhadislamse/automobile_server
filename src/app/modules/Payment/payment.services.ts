@@ -50,7 +50,7 @@ const getOrCreateStripePrice = async (plan: any, duration: 'Monthly' | 'Annually
     } else {
         const product = await stripe.products.create({
             name: `${plan.name} (${duration})`,
-            description: plan.features.join(', ').substring(0, 250),
+            description: plan.features.filter((f: any) => f.isActive).map((f: any) => f.name).join(', ').substring(0, 250),
             metadata: { planId: plan.id, duration }
         });
 
