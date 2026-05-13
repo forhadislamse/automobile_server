@@ -124,12 +124,23 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt?
     });
   }
 
-  // 2. Save User Message
+  // 2. Prepare AI Context (FETCH HISTORY BEFORE SAVING NEW MESSAGE TO AVOID DUPLICATES)
+  const previousMessages = await prisma.chatMessage.findMany({
+    where: { sessionId: session.id },
+    orderBy: { createdAt: 'asc' },
+    take: 20
+  });
+
+  const history = previousMessages.map(msg => ({
+    role: msg.role,
+    content: msg.content
+  }));
+
+  // 3. Save Current User Message to DB
   await prisma.chatMessage.create({
     data: { sessionId: session.id, role: 'user', content: userInput, image: payload.image }
   });
 
-  // 3. Prepare AI Context
   const planSubscription = await validateAISubscription(userId);
   const masterConfig = getMasterAIConfig();
   const upgradePrompts = getPlanUpgradePrompts(planSubscription.plan.category);
@@ -145,17 +156,6 @@ CURRENT SESSION STATE (ENFORCED BY BACKEND):
 - Active Concern: ${session.activeConcern}
 - Highest Prior Step: Step ${session.currentStep}
   `.trim();
-
-  const previousMessages = await prisma.chatMessage.findMany({
-    where: { sessionId: session.id },
-    orderBy: { createdAt: 'desc' },
-    take: 20,
-  });
-
-  const history = previousMessages.reverse().map(msg => ({
-    role: msg.role,
-    content: msg.content
-  }));
 
   // 4. Call AI for Next Step (JSON Mode)
   const aiResponse = await callAI(systemPrompt, userInput, payload.image, masterConfig.master_engine.model, history, true);
@@ -176,11 +176,13 @@ CURRENT SESSION STATE (ENFORCED BY BACKEND):
     }
   }
 
-  // 6. Update Session State
+  // 6. Update Session State (PERSIST VEHICLE DATA AND CONCERN)
   await prisma.chatSession.update({
     where: { id: session.id },
     data: {
       currentStep: diagnosticData.step_number || session.currentStep,
+      vehicleData: diagnosticData.vehicle !== "Unknown" ? { vehicle: diagnosticData.vehicle } : session.vehicleData,
+      activeConcern: diagnosticData.concern !== "Unknown" ? diagnosticData.concern : session.activeConcern,
       expectedOptions: diagnosticData.response_options || [],
       diagnosticStatus: diagnosticData.state_action === 'final_conclusion' ? 'COMPLETED' : 'ACTIVE',
       updatedAt: new Date()
