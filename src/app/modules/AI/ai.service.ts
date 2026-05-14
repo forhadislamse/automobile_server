@@ -10,23 +10,26 @@ import { TechnicianServices } from '../technician/technician.service';
  * Part of the "Backend Enforcement Layer".
  */
 const validateTechnicianInput = (userInput: string, expectedOptions: string[]) => {
-  if (expectedOptions.length === 0) return true; // Initial input or no options yet
+  if (!expectedOptions || expectedOptions.length === 0) return true; // Initial input or no options yet
 
-  const normalizedInput = userInput.toLowerCase().trim();
+  const normalizedInput = String(userInput).toLowerCase().trim();
   
   // 1. Check for vague or invalid proof language
   const invalidPhrases = ["looks good", "seems fine", "i think", "probably", "should be okay", "checked it", "tested okay"];
-  if (invalidPhrases.some(phrase => normalizedInput.includes(phrase)) && !expectedOptions.some(opt => opt.toLowerCase().includes(normalizedInput))) {
+  
+  // Only reject if it's a vague phrase AND doesn't match any valid option
+  const isVague = invalidPhrases.some(phrase => normalizedInput.includes(phrase));
+  const matchesOption = expectedOptions.some(option => {
+    const opt = String(option).toLowerCase().trim();
+    return normalizedInput === opt || normalizedInput.includes(opt) || opt.includes(normalizedInput);
+  });
+
+  if (isVague && !matchesOption) {
     return false;
   }
 
-  // 2. Check if input closely matches one of the expected options
-  const isMatch = expectedOptions.some(option => {
-    const opt = option.toLowerCase();
-    return normalizedInput.includes(opt) || opt.includes(normalizedInput);
-  });
-
-  return isMatch;
+  // 2. Return match result
+  return matchesOption;
 };
 
 const startNewChat = async (userId: string, ownerId: string, payload: { prompt?: string, image?: string }) => {
