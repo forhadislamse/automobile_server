@@ -152,7 +152,7 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt?
 
   const userInput = payload.prompt || "[Image Shared]";
 
-  // 1. Load Session State
+  // 2. Load Session State
   const session = await prisma.chatSession.findUnique({
     where: { id: payload.sessionId },
     include: { user: true }
@@ -161,7 +161,9 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt?
   if (!session) throw new ApiError(httpStatus.NOT_FOUND, 'Session not found');
   if (session.userId !== userId) throw new ApiError(httpStatus.FORBIDDEN, 'Access denied');
 
-  // 2. BACKEND ENFORCEMENT: Check for New Concern Switch
+  // 2.1 BACKEND ENFORCEMENT: Check for New Concern Switch
+  const planSubscription = await validateAISubscription(userId);
+  const planCategory = planSubscription.plan.category;
   const lowInput = userInput.toLowerCase();
   const isSwitchAttempt = (lowInput.includes("also") || lowInput.includes("another") || lowInput.includes("issue with") || lowInput.includes("not working")) && 
                           !session.activeConcern?.toLowerCase().split(' ').some(word => lowInput.includes(word));
@@ -235,7 +237,6 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt?
     data: { sessionId: session.id, role: 'user', content: userInput, image: payload.image }
   });
 
-  const planSubscription = await validateAISubscription(userId);
   const masterConfig = getMasterAIConfig();
   const upgradePrompts = getPlanUpgradePrompts(planSubscription.plan.category);
   
@@ -263,7 +264,6 @@ CURRENT SESSION STATE (ENFORCED BY BACKEND):
   }
 
   // 7. BACKEND ENFORCEMENT: Plan Check (Overrule AI if needed)
-  const planCategory = planSubscription.plan.category;
   const isEuropean = /bmw|audi|mercedes|volkswagen|vw|volvo|porsche|land rover|jaguar|fiat|alfa|mini|bentley/.test((diagnosticData.vehicle || "").toLowerCase());
   const isRestrictedDomain = /transmission|electrical/.test((diagnosticData.system_focus || "").toLowerCase());
 
