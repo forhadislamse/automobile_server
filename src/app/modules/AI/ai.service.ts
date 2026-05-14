@@ -62,10 +62,14 @@ ${upgradePrompts}
   }
 
   // 3.5 BACKEND ENFORCEMENT: Plan Check (Overrule AI if needed)
-  const isEuropean = /bmw|audi|mercedes|volkswagen|vw|volvo|porsche|land rover|jaguar|fiat|alfa|mini|bentley/.test((diagnosticData.vehicle || "").toLowerCase());
+  const vehicle = (diagnosticData.vehicle || "").toLowerCase();
+  const isEuropean = /bmw|audi|mercedes|volkswagen|vw|volvo|porsche|land rover|jaguar|fiat|alfa|mini|bentley/.test(vehicle);
   const isRestrictedDomain = /transmission|electrical/.test((diagnosticData.system_focus || "").toLowerCase());
 
-  if (planCategory === 'BASIC' && (isEuropean || isRestrictedDomain)) {
+  // Only lock if we actually have a vehicle name (prevents locking on "Hello" or "Hi")
+  const hasVehicle = vehicle && vehicle !== "unknown" && vehicle.length > 3;
+
+  if (planCategory === 'BASIC' && hasVehicle && (isEuropean || isRestrictedDomain)) {
     diagnosticData = {
       status: 'PLAN_LOCKED',
       message: isEuropean 
