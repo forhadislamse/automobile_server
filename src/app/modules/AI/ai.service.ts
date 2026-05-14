@@ -100,31 +100,60 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt?
     throw new ApiError(httpStatus.BAD_REQUEST, 'Please provide a response');
   }
 
+  const userInput = payload.prompt || "[Image Shared]";
+
+  // 1. Load Session State
   const session = await prisma.chatSession.findUnique({
-    where: { id: payload.sessionId }
+    where: { id: payload.sessionId },
+    include: { user: true }
   });
 
-  if (!session) throw new ApiError(httpStatus.NOT_FOUND, 'Chat session not found');
+  if (!session) throw new ApiError(httpStatus.NOT_FOUND, 'Session not found');
+  if (session.userId !== userId) throw new ApiError(httpStatus.FORBIDDEN, 'Access denied');
 
-  // 1. GATEKEEPER: Validate technician input against expected options
-  const userInput = payload.prompt || "[Image Shared]";
-  if (session.expectedOptions.length > 0 && !validateTechnicianInput(userInput, session.expectedOptions)) {
-    // Return a structured error without calling AI (Token saving + Enforcement)
-    return await prisma.chatMessage.create({
-      data: {
-        sessionId: session.id,
-        role: 'assistant',
-        content: JSON.stringify({
-          error: "INVALID_INPUT",
-          message: "Visual or vague confirmation is not valid. Please select one of the listed response options or provide a measured result.",
-          expected_options: session.expectedOptions,
-          step_number: session.currentStep
-        })
-      }
-    });
+  // 2. BACKEND ENFORCEMENT: Check for New Concern Switch
+  const lowInput = userInput.toLowerCase();
+  const isSwitchAttempt = (lowInput.includes("also") || lowInput.includes("another") || lowInput.includes("issue with") || lowInput.includes("not working")) && 
+                          !session.activeConcern?.toLowerCase().split(' ').some(word => lowInput.includes(word));
+
+  // If user says "Switch" or "Continue" to a confirmation
+  if (session.diagnosticStatus === 'ACTIVE' && isSwitchAttempt && !lowInput.includes("switch") && !lowInput.includes("continue")) {
+      return {
+          status: 'confirm_switch',
+          message: `Confirm switch to new concern? Reply "Switch" to start new diagnostic or "Continue" for current work.`,
+          session
+      };
   }
 
-  // 2. Prepare AI Context (FETCH HISTORY BEFORE SAVING NEW MESSAGE TO AVOID DUPLICATES)
+  // Handle Switch Logic
+  if (lowInput === "switch" && session.activeConcern) {
+      const paused = Array.isArray(session.pausedConcerns) ? session.pausedConcerns : [];
+      await prisma.chatSession.update({
+          where: { id: session.id },
+          data: {
+              activeConcern: "New Investigation", // Reset to unknown
+              currentStep: 0,
+              pausedConcerns: [...paused, { concern: session.activeConcern, pausedAtStep: session.currentStep, vehicleData: session.vehicleData }],
+              diagnosticStatus: 'ACTIVE'
+          }
+      });
+      return { status: 'success', message: "Previous concern paused. Starting new diagnostic. Please describe the issue." };
+  }
+
+  // 3. BACKEND ENFORCEMENT: Validate Technician Input (Vague Proof Gate)
+  // Document spec: { accepted: false, reason: "...", message: "..." }
+  const isValidInput = validateTechnicianInput(userInput, (session.expectedOptions as string[]) || []);
+  if (!isValidInput) {
+    return {
+      accepted: false,
+      reason: "Invalid test result",
+      message: "Visual or vague confirmation is not valid. Select one of the listed response options or provide a measured result.",
+      expected_response_options: session.expectedOptions,
+      current_step: session.currentStep
+    };
+  }
+
+  // 4. Prepare AI Context
   const previousMessages = await prisma.chatMessage.findMany({
     where: { sessionId: session.id },
     orderBy: { createdAt: 'asc' },
@@ -136,7 +165,7 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt?
     content: msg.content
   }));
 
-  // 3. Save Current User Message to DB
+  // 5. Save Current User Message to DB
   await prisma.chatMessage.create({
     data: { sessionId: session.id, role: 'user', content: userInput, image: payload.image }
   });
@@ -157,30 +186,35 @@ CURRENT SESSION STATE (ENFORCED BY BACKEND):
 - Highest Prior Step: Step ${session.currentStep}
   `.trim();
 
-  // 4. Call AI for Next Step (JSON Mode)
+  // 6. Call AI for Next Step (JSON Mode)
   const aiResponse = await callAI(systemPrompt, userInput, payload.image, masterConfig.master_engine.model, history, true);
   
   let diagnosticData;
   try {
     diagnosticData = JSON.parse(aiResponse);
   } catch (e) {
-    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "AI returned non-JSON response. Retrying diagnostic flow recommended.");
+    console.error("AI JSON Parse Error:", aiResponse);
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "AI returned invalid structure.");
   }
 
-  // 5. ENFORCEMENT: Step Number Validation
-  if (diagnosticData.state_action === "awaiting_response") {
-    const nextStep = diagnosticData.step_number;
-    if (nextStep <= session.currentStep) {
-        // AI reused a step number, backend correction logic could go here
-        console.warn(`[BACKEND ENFORCEMENT] AI reused step number ${nextStep}. Current is ${session.currentStep}.`);
+  // 7. BACKEND ENFORCEMENT: Step Number Validation (Document spec: throw on violation)
+  if (diagnosticData.state_action !== 'final_conclusion') {
+    const expectedNextStep = session.currentStep + 1;
+    if (diagnosticData.step_number !== expectedNextStep) {
+      // Log the violation and reject — do not silently fix
+      console.error(`[STEP VIOLATION] AI returned step ${diagnosticData.step_number}, expected ${expectedNextStep}. Rejecting.`);
+      throw new ApiError(httpStatus.UNPROCESSABLE_ENTITY,
+        `Step number violation: AI returned step ${diagnosticData.step_number}, expected step ${expectedNextStep}. Continue with Step ${expectedNextStep}.`
+      );
     }
   }
 
-  // 6. Update Session State (PERSIST VEHICLE DATA AND CONCERN)
+  // 8. Update Session State (lastValidStep + full state persist)
   await prisma.chatSession.update({
     where: { id: session.id },
     data: {
       currentStep: diagnosticData.step_number || session.currentStep,
+      lastValidStep: session.currentStep, // Track last confirmed step
       vehicleData: diagnosticData.vehicle !== "Unknown" ? { vehicle: diagnosticData.vehicle } : session.vehicleData,
       activeConcern: diagnosticData.concern !== "Unknown" ? diagnosticData.concern : session.activeConcern,
       expectedOptions: diagnosticData.response_options || [],
@@ -189,14 +223,11 @@ CURRENT SESSION STATE (ENFORCED BY BACKEND):
     }
   });
 
-  // 7. Save and Return AI response
-  return await prisma.chatMessage.create({
-    data: {
-      sessionId: session.id,
-      role: 'assistant',
-      content: JSON.stringify(diagnosticData)
-    }
+  const assistantMessage = await prisma.chatMessage.create({
+    data: { sessionId: session.id, role: 'assistant', content: JSON.stringify(diagnosticData) }
   });
+
+  return { session, assistantMessage, status: 'success' };
 };
 
 const getMyChatSessions = async (userId: string, searchTerm?: string) => {

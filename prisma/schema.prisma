@@ -243,6 +243,7 @@ model ChatSession {
   
   // --- New Diagnostic State Tracking Fields ---
   currentStep             Int               @default(0)
+  lastValidStep           Int               @default(0)  // Last step confirmed by valid technician input
   vehicleData             Json?             // { year, make, model, engine }
   activeConcern           String?
   expectedOptions         String[]          @default([])
