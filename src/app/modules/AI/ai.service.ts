@@ -61,6 +61,22 @@ ${upgradePrompts}
     throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "AI returned invalid diagnostic structure. Please try again.");
   }
 
+  // 3.5 BACKEND ENFORCEMENT: Plan Check (Overrule AI if needed)
+  const isEuropean = /bmw|audi|mercedes|volkswagen|vw|volvo|porsche|land rover|jaguar|fiat|alfa|mini|bentley/.test((diagnosticData.vehicle || "").toLowerCase());
+  const isRestrictedDomain = /transmission|electrical/.test((diagnosticData.system_focus || "").toLowerCase());
+
+  if (planCategory === 'BASIC' && (isEuropean || isRestrictedDomain)) {
+    diagnosticData = {
+      status: 'confirm_switch',
+      message: isEuropean 
+        ? `This is a European vehicle (${diagnosticData.vehicle}). Diagnostic data for European brands is exclusive to the European or Professional plans. Would you like to switch to the European Specialist (Requires Upgrade)?`
+        : `This appears to be an ${diagnosticData.system_focus} issue. Advanced diagnostic support for this domain is exclusive to the Electrical/Transmission specialist plans. Confirm switch to specialist?`,
+      vehicle: diagnosticData.vehicle,
+      concern: diagnosticData.concern,
+      system_focus: diagnosticData.system_focus
+    };
+  }
+
   // 4. Extract Vehicle and Concern from AI (Locked for the session)
   const vehicleData = diagnosticData.vehicle || userPrompt;
   const activeConcern = diagnosticData.concern || "Automotive Diagnostic";
@@ -212,14 +228,30 @@ CURRENT SESSION STATE (ENFORCED BY BACKEND):
     throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "AI returned invalid structure.");
   }
 
-  // 7. BACKEND ENFORCEMENT: Step Number Validation (Document spec: throw on violation)
-  if (diagnosticData.state_action !== 'final_conclusion') {
+  // 7. BACKEND ENFORCEMENT: Plan Check (Overrule AI if needed)
+  const planCategory = planSubscription.plan.category;
+  const isEuropean = /bmw|audi|mercedes|volkswagen|vw|volvo|porsche|land rover|jaguar|fiat|alfa|mini|bentley/.test((diagnosticData.vehicle || "").toLowerCase());
+  const isRestrictedDomain = /transmission|electrical/.test((diagnosticData.system_focus || "").toLowerCase());
+
+  if (planCategory === 'BASIC' && (isEuropean || isRestrictedDomain)) {
+    diagnosticData = {
+      status: 'confirm_switch',
+      message: isEuropean 
+        ? `This is a European vehicle (${diagnosticData.vehicle}). Diagnostic support for European brands is restricted to the European or Professional plans. Would you like to switch to the European Specialist (Requires Upgrade)?`
+        : `This appears to be an ${diagnosticData.system_focus} issue. Advanced support for this domain is exclusive to specialist plans. Confirm switch?`,
+      vehicle: diagnosticData.vehicle || session.vehicleData,
+      concern: diagnosticData.concern || session.activeConcern,
+      system_focus: diagnosticData.system_focus
+    };
+  }
+
+  // 7.5 BACKEND ENFORCEMENT: Step Number Validation
+  if (diagnosticData.state_action !== 'final_conclusion' && diagnosticData.status !== 'confirm_switch') {
     const expectedNextStep = session.currentStep + 1;
     if (diagnosticData.step_number !== expectedNextStep) {
-      // Log the violation and reject — do not silently fix
       console.error(`[STEP VIOLATION] AI returned step ${diagnosticData.step_number}, expected ${expectedNextStep}. Rejecting.`);
       throw new ApiError(httpStatus.UNPROCESSABLE_ENTITY,
-        `Step number violation: AI returned step ${diagnosticData.step_number}, expected step ${expectedNextStep}. Continue with Step ${expectedNextStep}.`
+        `Step number violation: AI returned step ${diagnosticData.step_number}, expected step ${expectedNextStep}.`
       );
     }
   }

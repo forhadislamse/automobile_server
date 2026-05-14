@@ -38,7 +38,16 @@ export const getPlanUpgradePrompts = (category: string) => {
   if (flags.control_module_strategy) upgradePrompt += `${upgrades.control_module_strategy}\n\n`;
   if (flags.shop_efficiency_layer) upgradePrompt += `${upgrades.shop_efficiency_layer}\n\n`;
 
-  return upgradePrompt;
+  // BACKEND ENFORCEMENT: Explicitly tell AI what is FORBIDDEN
+  let forbiddenPrompt = "\n### FORBIDDEN / DISABLED FEATURES (PLAN GATED) ###\n";
+  if (!flags.euro_mode) {
+    forbiddenPrompt += "- EUROPEAN VEHICLES: You are FORBIDDEN from providing diagnostic data for BMW, Mercedes, Audi, VW, Porsche, Volvo, Land Rover, or Jaguar. If detected, you MUST set state_action: 'confirm_switch' and message: 'European vehicle detected. Upgrade required.'\n";
+  }
+  if (category === 'BASIC') {
+    forbiddenPrompt += "- TRANSMISSION / ELECTRICAL DOMAINS: You are FORBIDDEN from providing advanced diagnostic steps for these systems. If system_focus is Transmission or Electrical, you MUST set state_action: 'confirm_switch'.\n";
+  }
+
+  return upgradePrompt + forbiddenPrompt;
 };
 
 /**
