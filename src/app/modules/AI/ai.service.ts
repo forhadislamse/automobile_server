@@ -118,11 +118,18 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt?
 
   // If user says "Switch" or "Continue" to a confirmation
   if (session.diagnosticStatus === 'ACTIVE' && isSwitchAttempt && !lowInput.includes("switch") && !lowInput.includes("continue")) {
-      return {
+      const response = {
           status: 'confirm_switch',
           message: `Confirm switch to new concern? Reply "Switch" to start new diagnostic or "Continue" for current work.`,
           session
       };
+      
+      // PERSIST SYSTEM PROMPT
+      await prisma.chatMessage.create({
+          data: { sessionId: session.id, role: 'assistant', content: JSON.stringify(response) }
+      });
+
+      return response;
   }
 
   // Handle Switch Logic
@@ -144,13 +151,21 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt?
   // Document spec: { accepted: false, reason: "...", message: "..." }
   const isValidInput = validateTechnicianInput(userInput, (session.expectedOptions as string[]) || []);
   if (!isValidInput) {
-    return {
+    const errorResponse = {
       accepted: false,
+      status: 'INVALID_INPUT',
       reason: "Invalid test result",
       message: "Visual or vague confirmation is not valid. Select one of the listed response options or provide a measured result.",
       expected_response_options: session.expectedOptions,
       current_step: session.currentStep
     };
+
+    // PERSIST ERROR MESSAGE
+    await prisma.chatMessage.create({
+        data: { sessionId: session.id, role: 'assistant', content: JSON.stringify(errorResponse) }
+    });
+
+    return errorResponse;
   }
 
   // 4. Prepare AI Context
