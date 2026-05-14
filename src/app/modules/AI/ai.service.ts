@@ -280,9 +280,13 @@ CURRENT SESSION STATE (ENFORCED BY BACKEND):
   }
 
   // 7.5 BACKEND ENFORCEMENT: Step Number Validation
-  if (diagnosticData.state_action !== 'final_conclusion' && diagnosticData.status !== 'PLAN_LOCKED') {
+  // Only enforce if AI actually returns a step number (Diagnostic Mode)
+  if (diagnosticData.step_number && diagnosticData.state_action !== 'final_conclusion' && diagnosticData.status !== 'PLAN_LOCKED') {
     const expectedNextStep = session.currentStep + 1;
-    if (diagnosticData.step_number !== expectedNextStep) {
+    
+    // If we are still in intake (step 0 or 1) and AI is just asking for more info, 
+    // it might return step 1 again or no step. We only enforce strict sequence after Step 1.
+    if (session.currentStep >= 1 && diagnosticData.step_number !== expectedNextStep) {
       console.error(`[STEP VIOLATION] AI returned step ${diagnosticData.step_number}, expected ${expectedNextStep}. Rejecting.`);
       throw new ApiError(httpStatus.UNPROCESSABLE_ENTITY,
         `Step number violation: AI returned step ${diagnosticData.step_number}, expected step ${expectedNextStep}.`
