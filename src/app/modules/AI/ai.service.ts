@@ -67,10 +67,10 @@ ${upgradePrompts}
 
   if (planCategory === 'BASIC' && (isEuropean || isRestrictedDomain)) {
     diagnosticData = {
-      status: 'confirm_switch',
+      status: 'PLAN_LOCKED',
       message: isEuropean 
-        ? `This is a European vehicle (${diagnosticData.vehicle}). Diagnostic data for European brands is exclusive to the European or Professional plans. Would you like to switch to the European Specialist (Requires Upgrade)?`
-        : `This appears to be an ${diagnosticData.system_focus} issue. Advanced diagnostic support for this domain is exclusive to the Electrical/Transmission specialist plans. Confirm switch to specialist?`,
+        ? `Diagnostic data for European brands (${diagnosticData.vehicle}) is restricted. This session is locked under your current plan. Please contact your shop owner to upgrade to the European or Professional plan.`
+        : `Diagnostic support for ${diagnosticData.system_focus} systems is restricted. Please upgrade to a specialized plan to continue this investigation.`,
       vehicle: diagnosticData.vehicle,
       concern: diagnosticData.concern,
       system_focus: diagnosticData.system_focus
@@ -235,10 +235,10 @@ CURRENT SESSION STATE (ENFORCED BY BACKEND):
 
   if (planCategory === 'BASIC' && (isEuropean || isRestrictedDomain)) {
     diagnosticData = {
-      status: 'confirm_switch',
+      status: 'PLAN_LOCKED',
       message: isEuropean 
-        ? `This is a European vehicle (${diagnosticData.vehicle}). Diagnostic support for European brands is restricted to the European or Professional plans. Would you like to switch to the European Specialist (Requires Upgrade)?`
-        : `This appears to be an ${diagnosticData.system_focus} issue. Advanced support for this domain is exclusive to specialist plans. Confirm switch?`,
+        ? `Diagnostic support for European brands (${diagnosticData.vehicle}) is restricted under your current plan. This investigation is locked. Please contact your shop owner to upgrade.`
+        : `Support for ${diagnosticData.system_focus} systems is exclusive to specialist plans. Investigation locked.`,
       vehicle: diagnosticData.vehicle || session.vehicleData,
       concern: diagnosticData.concern || session.activeConcern,
       system_focus: diagnosticData.system_focus
@@ -246,7 +246,7 @@ CURRENT SESSION STATE (ENFORCED BY BACKEND):
   }
 
   // 7.5 BACKEND ENFORCEMENT: Step Number Validation
-  if (diagnosticData.state_action !== 'final_conclusion' && diagnosticData.status !== 'confirm_switch') {
+  if (diagnosticData.state_action !== 'final_conclusion' && diagnosticData.status !== 'PLAN_LOCKED') {
     const expectedNextStep = session.currentStep + 1;
     if (diagnosticData.step_number !== expectedNextStep) {
       console.error(`[STEP VIOLATION] AI returned step ${diagnosticData.step_number}, expected ${expectedNextStep}. Rejecting.`);
