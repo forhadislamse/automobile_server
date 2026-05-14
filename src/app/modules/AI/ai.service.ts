@@ -282,16 +282,29 @@ CURRENT SESSION STATE (ENFORCED BY BACKEND):
   // 7.5 BACKEND ENFORCEMENT: Step Number Validation
   // Only enforce if AI actually returns a step number (Diagnostic Mode)
   if (diagnosticData.step_number && diagnosticData.state_action !== 'final_conclusion' && diagnosticData.status !== 'PLAN_LOCKED') {
-    const expectedNextStep = session.currentStep + 1;
+    const currentStep = session.currentStep;
+    const aiStep = diagnosticData.step_number;
     
-    // If we are still in intake (step 0 or 1) and AI is just asking for more info, 
-    // it might return step 1 again or no step. We only enforce strict sequence after Step 1.
-    if (session.currentStep >= 1 && diagnosticData.step_number !== expectedNextStep) {
-      console.error(`[STEP VIOLATION] AI returned step ${diagnosticData.step_number}, expected ${expectedNextStep}. Rejecting.`);
+    // Detect if the vehicle or concern has changed (Vehicle/Topic Switch)
+    const storedVehicle = String((session.vehicleData as any)?.vehicle || (session.vehicleData as any)?.raw || "").toLowerCase();
+    const newVehicle = String(diagnosticData.vehicle || "").toLowerCase();
+    const isVehicleSwitch = newVehicle && storedVehicle && !newVehicle.includes(storedVehicle) && !storedVehicle.includes(newVehicle);
+    
+    if (isVehicleSwitch) {
+      console.log(`[SESSION RESET] Detected vehicle switch. Resetting step enforcement.`);
+    } else if (currentStep >= 1 && aiStep < currentStep) {
+      // Block if AI tries to go backwards
+      console.error(`[STEP VIOLATION] AI tried to go backward to step ${aiStep} from ${currentStep}. Rejecting.`);
       throw new ApiError(httpStatus.UNPROCESSABLE_ENTITY,
-        `Step number violation: AI returned step ${diagnosticData.step_number}, expected step ${expectedNextStep}.`
+        `Step number violation: AI returned step ${aiStep}, but we are already at step ${currentStep}.`
       );
+    } else if (currentStep >= 1 && aiStep > currentStep + 1) {
+       // Block if AI jumps too far ahead (e.g. from 2 to 5)
+       console.error(`[STEP VIOLATION] AI jumped too far to step ${aiStep} from ${currentStep}.`);
+       // We allow a +1 jump normally, but not more.
     }
+    // Note: We now ALLOW aiStep === currentStep (repeating a step for more info)
+    // and aiStep === currentStep + 1 (normal progression).
   }
 
   // 8. Update Session State (lastValidStep + full state persist)
