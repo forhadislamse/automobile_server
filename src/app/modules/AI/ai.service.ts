@@ -81,6 +81,36 @@ ${upgradePrompts}
     };
   }
 
+  // 4. If PLAN_LOCKED, create a minimal session, save messages, and return early
+  if (diagnosticData.status === 'PLAN_LOCKED') {
+    const vehicleLabel = diagnosticData.vehicle || userPrompt;
+    const concernLabel = diagnosticData.concern || "Restricted Diagnostic";
+
+    const session = await prisma.chatSession.create({
+      data: {
+        userId,
+        ownerId,
+        persona: "Master Engine v5",
+        title: `${String(vehicleLabel).substring(0, 30)} - Upgrade Required`,
+        currentStep: 0,
+        vehicleData: { raw: String(vehicleLabel) },
+        activeConcern: String(concernLabel),
+        expectedOptions: [],
+        diagnosticStatus: 'ACTIVE'
+      }
+    });
+
+    await prisma.chatMessage.create({
+      data: { sessionId: session.id, role: 'user', content: userPrompt, image: payload.image }
+    });
+
+    const assistantMessage = await prisma.chatMessage.create({
+      data: { sessionId: session.id, role: 'assistant', content: JSON.stringify(diagnosticData) }
+    });
+
+    return { session, assistantMessage, status: 'success' };
+  }
+
   // 4. Extract Vehicle and Concern from AI (Locked for the session)
   const vehicleData = diagnosticData.vehicle || userPrompt;
   const activeConcern = diagnosticData.concern || "Automotive Diagnostic";
@@ -91,7 +121,7 @@ ${upgradePrompts}
       userId,
       ownerId,
       persona: "Master Engine v5",
-      title: `${vehicleData.substring(0, 30)} - ${activeConcern.substring(0, 15)}`,
+      title: `${String(vehicleData).substring(0, 30)} - ${String(activeConcern).substring(0, 15)}`,
       currentStep: diagnosticData.step_number || 1,
       vehicleData: diagnosticData.vehicle ? { raw: diagnosticData.vehicle } : { raw: userPrompt },
       activeConcern: activeConcern,
