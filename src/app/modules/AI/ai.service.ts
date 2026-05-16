@@ -88,23 +88,20 @@ ${upgradePrompts}
   const systemFocus = (diagnosticData.system_focus || "").toLowerCase();
   
   const isEuropean = /bmw|audi|mercedes|volkswagen|vw|volvo|porsche|land rover|jaguar|fiat|alfa|mini|bentley/.test(vehicle);
-  const isAdvancedSystem = /control|network/.test(systemFocus); // Upgrade 9: Control Module Strategy
-  const isSpecializedSystem = /transmission|electrical/.test(systemFocus); // Upgrade 8: Scan Data Interpretation
+  const isSpecializedSystem = /transmission|electrical/.test(systemFocus); 
 
   // Only lock if we actually have a vehicle name (prevents locking on "Hello" or "Hi")
   const hasVehicle = vehicle && vehicle !== "unknown" && vehicle.length > 3;
 
-  // RULE A: European vehicles OR Control/Network systems ONLY for EUROPEAN plan (Upgrade 4 & 9)
-  const needsEuropeanPlan = (isEuropean || isAdvancedSystem) && planCategory !== 'EUROPEAN';
-  // RULE B: Restricted domains (Transmission/Electrical) ONLY for PROFESSIONAL or EUROPEAN plans
+  // RULE A: European vehicles ONLY for EUROPEAN plan
+  const needsEuropeanPlan = isEuropean && planCategory !== 'EUROPEAN';
+  // RULE B: Specialized systems (Transmission/Electrical) ONLY for PROFESSIONAL or EUROPEAN plans
   const needsProPlan = isSpecializedSystem && planCategory === 'BASIC';
 
   if (hasVehicle && (needsEuropeanPlan || needsProPlan)) {
     const lockReason = isEuropean 
       ? `European brand diagnostic (${diagnosticData.vehicle})`
-      : isAdvancedSystem 
-        ? `Advanced ${diagnosticData.system_focus} system diagnostic`
-        : `Specialized ${diagnosticData.system_focus} system diagnostic`;
+      : `Specialized ${diagnosticData.system_focus} system diagnostic`;
 
     diagnosticData = {
       accepted: true,
@@ -115,14 +112,14 @@ ${upgradePrompts}
         ? "Access Locked: European Plan Required"
         : "Access Locked: Professional Plan Required",
       what_to_check: needsEuropeanPlan
-        ? "Please contact your shop owner to upgrade to the EUROPEAN plan for advanced module and European brand access."
+        ? "Please contact your shop owner to upgrade to the EUROPEAN plan for European brand access."
         : "Please contact your shop owner to upgrade to the PROFESSIONAL plan for specialized system diagnostics.",
       response_options: [],
       state_action: "awaiting_response",
       vehicle: diagnosticData.vehicle,
       concern: diagnosticData.concern,
       system_focus: diagnosticData.system_focus,
-      full_text_response: "Upgrade required to access this advanced diagnostic domain.",
+      full_text_response: "Upgrade required to access this specialized diagnostic data.",
       is_locked: true
     };
   }
@@ -327,20 +324,17 @@ CURRENT SESSION STATE (ENFORCED BY BACKEND):
   const systemFocus = (diagnosticData.system_focus || "").toLowerCase();
   
   const isEuropean = /bmw|audi|mercedes|volkswagen|vw|volvo|porsche|land rover|jaguar|fiat|alfa|mini|bentley/.test(vehicle);
-  const isAdvancedSystem = /control|network/.test(systemFocus); // Upgrade 9: Control Module Strategy
-  const isSpecializedSystem = /transmission|electrical/.test(systemFocus); // Upgrade 8: Scan Data Interpretation
+  const isSpecializedSystem = /transmission|electrical/.test(systemFocus); 
 
-  // RULE A: European vehicles OR Control/Network systems ONLY for EUROPEAN plan (Upgrade 4 & 9)
-  const needsEuropeanPlan = (isEuropean || isAdvancedSystem) && planCategory !== 'EUROPEAN';
-  // RULE B: Restricted domains (Transmission/Electrical) ONLY for PROFESSIONAL or EUROPEAN plans
+  // RULE A: European vehicles ONLY for EUROPEAN plan
+  const needsEuropeanPlan = isEuropean && planCategory !== 'EUROPEAN';
+  // RULE B: Specialized systems (Transmission/Electrical) ONLY for PROFESSIONAL or EUROPEAN plans
   const needsProPlan = isSpecializedSystem && planCategory === 'BASIC';
 
   if (needsEuropeanPlan || needsProPlan) {
     const lockReason = isEuropean 
       ? `European brand diagnostic (${diagnosticData.vehicle})`
-      : isAdvancedSystem 
-        ? `Advanced ${diagnosticData.system_focus} system diagnostic`
-        : `Specialized ${diagnosticData.system_focus} system diagnostic`;
+      : `Specialized ${diagnosticData.system_focus} system diagnostic`;
 
     diagnosticData = {
       accepted: true,
@@ -351,14 +345,14 @@ CURRENT SESSION STATE (ENFORCED BY BACKEND):
         ? "Access Locked: European Plan Required"
         : "Access Locked: Professional Plan Required",
       what_to_check: needsEuropeanPlan
-        ? "Please contact your shop owner to upgrade to the EUROPEAN plan for advanced module and European brand access."
+        ? "Please contact your shop owner to upgrade to the EUROPEAN plan for European brand access."
         : "Please contact your shop owner to upgrade to the PROFESSIONAL plan for specialized system diagnostics.",
       response_options: [],
       state_action: "awaiting_response",
       vehicle: diagnosticData.vehicle || session.vehicleData,
       concern: diagnosticData.concern || session.activeConcern,
       system_focus: diagnosticData.system_focus,
-      full_text_response: "Upgrade required to access this advanced diagnostic domain.",
+      full_text_response: "Upgrade required to access this specialized diagnostic data.",
       is_locked: true
     };
   }
