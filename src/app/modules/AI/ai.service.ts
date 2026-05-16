@@ -153,11 +153,6 @@ ${upgradePrompts}
     data: { sessionId: session.id, role: 'user', content: userPrompt, image: payload.image }
   });
 
-  // 6. Save messages
-  await prisma.chatMessage.create({
-    data: { sessionId: session.id, role: 'user', content: userPrompt, image: payload.image }
-  });
-
   const assistantMessage = await prisma.chatMessage.create({
     data: { sessionId: session.id, role: 'assistant', content: JSON.stringify(diagnosticData) }
   });
