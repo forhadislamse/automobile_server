@@ -26,6 +26,14 @@ const validateTechnicianInput = (userInput: string, expectedOptions: string[]) =
     "idk",
     "not sure",
     "maybe",
+    "hello",
+    "hi",
+    "hey",
+    "thanks",
+    "thank you",
+    "ok",
+    "okay",
+    "yo",
   ];
 
   const isPurelyVague = purelyVaguePhrases.some(phrase => normalizedInput === phrase || normalizedInput === phrase + ".");
@@ -223,7 +231,7 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt?
       accepted: false,
       status: 'INVALID_INPUT',
       reason: "Invalid test result",
-      message: "Visual or vague confirmation is not valid. Select one of the listed response options or provide a measured result.",
+      message: "Invalid Response: Your input was unclear or imprecise. Please select one of the options from the list below to proceed.",
       expected_response_options: session.expectedOptions,
       current_step: session.currentStep
     };
