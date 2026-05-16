@@ -319,30 +319,6 @@ CURRENT SESSION STATE (ENFORCED BY BACKEND):
     throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "AI returned invalid structure.");
   }
 
-  // 6.5 FORCE CONFIRM SWITCH DETECTION (Harden AI ambiguity)
-  const lowerResponse = aiResponse.toLowerCase();
-  const isAskingToSwitch = lowerResponse.includes("confirm switch") || 
-                           lowerResponse.includes("switch to new concern") || 
-                           diagnosticData.state_action === 'confirm_switch';
-
-  if (isAskingToSwitch) {
-    // Extract the proposed concern from the response text if possible
-    const match = aiResponse.match(/confirm switch to new concern:?\s*([^?]+)/i);
-    const newConcern = match ? match[1].trim() : "new concern";
-
-    const confirmResponse = {
-      status: 'confirm_switch',
-      state_action: 'confirm_switch',
-      message: `Confirm switch to new concern: ${newConcern}? Reply Switch or Continue current concern.`,
-      full_text_response: `Confirm switch to new concern: ${newConcern}? Reply Switch or Continue current concern.`
-    };
-
-    const assistantMessage = await prisma.chatMessage.create({
-      data: { sessionId: session.id, role: 'assistant', content: JSON.stringify(confirmResponse) }
-    });
-
-    return { ...confirmResponse, session, assistantMessage };
-  }
 
   // 7. BACKEND ENFORCEMENT: Plan Check (Overrule AI if needed)
   const vehicle = (diagnosticData.vehicle || "").toLowerCase();
