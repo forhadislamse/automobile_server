@@ -153,6 +153,14 @@ ${upgradePrompts}
     data: { sessionId: session.id, role: 'user', content: userPrompt, image: payload.image }
   });
 
+  // Clean up empty fields before sending to frontend
+  if (!diagnosticData.response_options || diagnosticData.response_options.length === 0) {
+    delete diagnosticData.response_options;
+  }
+  if (!diagnosticData.what_to_check || diagnosticData.what_to_check.trim() === "") {
+    delete diagnosticData.what_to_check;
+  }
+
   const assistantMessage = await prisma.chatMessage.create({
     data: { sessionId: session.id, role: 'assistant', content: JSON.stringify(diagnosticData) }
   });
