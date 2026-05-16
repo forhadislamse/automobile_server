@@ -55,6 +55,12 @@ const startNewChat = async (userId: string, ownerId: string, payload: { prompt?:
   const systemPrompt = `
 ${masterConfig.master_engine.instructions}
 
+### INTAKE DYNAMICS (CRITICAL) ###
+The user has just started a session with the following input: "${userPrompt}".
+1. If this input contains partial vehicle data (e.g., "Honda Civic"), ACKNOWLEDGE it in your "current_assessment".
+2. Set "step_number" to 0 and explicitly list ONLY the missing required fields (Year, Engine size, or Concern) in your "instruction".
+3. Do NOT provide a generic "Please provide Year, Make, Model" message if some of those are already known from the prompt.
+
 ### ENABLED PLAN UPGRADES FOR THIS SESSION ###
 ${upgradePrompts}
   `.trim();
@@ -251,11 +257,17 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt?
   const systemPrompt = `
 ${masterConfig.master_engine.instructions}
 
+### INTAKE DYNAMICS (CRITICAL) ###
+The current technician input is: "${userInput}".
+1. If the technician provides partial data (e.g., just the Year or just the Model) in response to a request, ACKNOWLEDGE the data received.
+2. If the intake is still incomplete, set "step_number" to 0 (or keep current) and explicitly ask only for what is still missing.
+3. Be conversational but precise.
+
 ### ENABLED PLAN UPGRADES ###
 ${upgradePrompts}
 
 CURRENT SESSION STATE (ENFORCED BY BACKEND):
-- Locked Vehicle: ${JSON.stringify(session.vehicleData)}
+- Current Vehicle Data: ${JSON.stringify(session.vehicleData)}
 - Active Concern: ${session.activeConcern}
 - Highest Prior Step: Step ${session.currentStep}
   `.trim();
