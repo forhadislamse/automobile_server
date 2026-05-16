@@ -19,7 +19,7 @@ const validateTechnicianInput = (userInput: string, expectedOptions: string[]) =
   // The AI will handle interpretation of everything else
   const purelyVaguePhrases = [
     "looks good",
-    "seems fine", 
+    "seems fine",
     "i think so",
     "probably fine",
     "should be okay",
@@ -87,7 +87,7 @@ ${upgradePrompts}
   if (planCategory === 'BASIC' && hasVehicle && (isEuropean || isRestrictedDomain)) {
     diagnosticData = {
       status: 'PLAN_LOCKED',
-      message: isEuropean 
+      message: isEuropean
         ? `Diagnostic data for European brands (${diagnosticData.vehicle}) is restricted. This session is locked under your current plan. Please contact your shop owner to upgrade to the European or Professional plan.`
         : `Diagnostic support for ${diagnosticData.system_focus} systems is restricted. Please upgrade to a specialized plan to continue this investigation.`,
       vehicle: diagnosticData.vehicle,
@@ -180,38 +180,38 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt?
   const planSubscription = await validateAISubscription(userId);
   const planCategory = planSubscription.plan.category;
   const lowInput = userInput.toLowerCase();
-  const isSwitchAttempt = (lowInput.includes("also") || lowInput.includes("another") || lowInput.includes("issue with") || lowInput.includes("not working")) && 
-                          !session.activeConcern?.toLowerCase().split(' ').some(word => lowInput.includes(word));
+  const isSwitchAttempt = (lowInput.includes("also") || lowInput.includes("another") || lowInput.includes("issue with") || lowInput.includes("not working")) &&
+    !session.activeConcern?.toLowerCase().split(' ').some(word => lowInput.includes(word));
 
   // If user says "Switch" or "Continue" to a confirmation
   if (session.diagnosticStatus === 'ACTIVE' && isSwitchAttempt && !lowInput.includes("switch") && !lowInput.includes("continue")) {
-      const response = {
-          status: 'confirm_switch',
-          message: `Confirm switch to new concern? Reply "Switch" to start new diagnostic or "Continue" for current work.`,
-          session
-      };
-      
-      // PERSIST SYSTEM PROMPT
-      await prisma.chatMessage.create({
-          data: { sessionId: session.id, role: 'assistant', content: JSON.stringify(response) }
-      });
+    const response = {
+      status: 'confirm_switch',
+      message: `Confirm switch to new concern? Reply "Switch" to start new diagnostic or "Continue" for current work.`,
+      session
+    };
 
-      return response;
+    // PERSIST SYSTEM PROMPT
+    await prisma.chatMessage.create({
+      data: { sessionId: session.id, role: 'assistant', content: JSON.stringify(response) }
+    });
+
+    return response;
   }
 
   // Handle Switch Logic
   if (lowInput === "switch" && session.activeConcern) {
-      const paused = Array.isArray(session.pausedConcerns) ? session.pausedConcerns : [];
-      await prisma.chatSession.update({
-          where: { id: session.id },
-          data: {
-              activeConcern: "New Investigation", // Reset to unknown
-              currentStep: 0,
-              pausedConcerns: [...paused, { concern: session.activeConcern, pausedAtStep: session.currentStep, vehicleData: session.vehicleData }],
-              diagnosticStatus: 'ACTIVE'
-          }
-      });
-      return { status: 'success', message: "Previous concern paused. Starting new diagnostic. Please describe the issue." };
+    const paused = Array.isArray(session.pausedConcerns) ? session.pausedConcerns : [];
+    await prisma.chatSession.update({
+      where: { id: session.id },
+      data: {
+        activeConcern: "New Investigation", // Reset to unknown
+        currentStep: 0,
+        pausedConcerns: [...paused, { concern: session.activeConcern, pausedAtStep: session.currentStep, vehicleData: session.vehicleData }],
+        diagnosticStatus: 'ACTIVE'
+      }
+    });
+    return { status: 'success', message: "Previous concern paused. Starting new diagnostic. Please describe the issue." };
   }
 
   // 3. BACKEND ENFORCEMENT: Validate Technician Input (Vague Proof Gate)
@@ -229,7 +229,7 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt?
 
     // PERSIST ERROR MESSAGE
     await prisma.chatMessage.create({
-        data: { sessionId: session.id, role: 'assistant', content: JSON.stringify(errorResponse) }
+      data: { sessionId: session.id, role: 'assistant', content: JSON.stringify(errorResponse) }
     });
 
     return errorResponse;
@@ -254,7 +254,7 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt?
 
   const masterConfig = getMasterAIConfig();
   const upgradePrompts = getPlanUpgradePrompts(planSubscription.plan.category);
-  
+
   const systemPrompt = `
 ${masterConfig.master_engine.instructions}
 
@@ -263,7 +263,8 @@ The current technician input is: "${userInput}".
 1. If the technician provides partial data (e.g., just the Year or just the Model) in response to a request, ACKNOWLEDGE the data received.
 2. If the intake is still incomplete, set "step_number" to 0 (or keep current) and explicitly ask only for what is still missing.
 3. **RESPONSE OPTIONS**: Set "response_options" to an EMPTY ARRAY []. Do NOT provide any buttons during the intake phase.
-4. Be conversational but precise.
+4. **DIAGNOSTIC OPTIONS (CRITICAL)**: From Step 1 onwards, ensure your "response_options" are COMPREHENSIVE. Include all common technical outcomes, and always include a "found other issues" or "cannot perform test" option if applicable, so the technician can always find a matching option for their situation.
+5. Be conversational but precise.
 
 ### ENABLED PLAN UPGRADES ###
 ${upgradePrompts}
@@ -276,7 +277,7 @@ CURRENT SESSION STATE (ENFORCED BY BACKEND):
 
   // 6. Call AI for Next Step (JSON Mode)
   const aiResponse = await callAI(systemPrompt, userInput, payload.image, masterConfig.master_engine.model, history, true);
-  
+
   let diagnosticData;
   try {
     diagnosticData = JSON.parse(aiResponse);
@@ -292,7 +293,7 @@ CURRENT SESSION STATE (ENFORCED BY BACKEND):
   if (planCategory === 'BASIC' && (isEuropean || isRestrictedDomain)) {
     diagnosticData = {
       status: 'PLAN_LOCKED',
-      message: isEuropean 
+      message: isEuropean
         ? `Diagnostic support for European brands (${diagnosticData.vehicle}) is restricted under your current plan. This investigation is locked. Please contact your shop owner to upgrade.`
         : `Support for ${diagnosticData.system_focus} systems is exclusive to specialist plans. Investigation locked.`,
       vehicle: diagnosticData.vehicle || session.vehicleData,
@@ -306,12 +307,12 @@ CURRENT SESSION STATE (ENFORCED BY BACKEND):
   if (diagnosticData.step_number && diagnosticData.state_action !== 'final_conclusion' && diagnosticData.status !== 'PLAN_LOCKED') {
     const currentStep = session.currentStep;
     const aiStep = diagnosticData.step_number;
-    
+
     // Detect if the vehicle or concern has changed (Vehicle/Topic Switch)
     const storedVehicle = String((session.vehicleData as any)?.vehicle || (session.vehicleData as any)?.raw || "").toLowerCase();
     const newVehicle = String(diagnosticData.vehicle || "").toLowerCase();
     const isVehicleSwitch = newVehicle && storedVehicle && !newVehicle.includes(storedVehicle) && !storedVehicle.includes(newVehicle);
-    
+
     if (isVehicleSwitch) {
       console.log(`[SESSION RESET] Detected vehicle switch. Resetting step enforcement.`);
     } else if (currentStep >= 1 && aiStep < currentStep) {
@@ -321,9 +322,9 @@ CURRENT SESSION STATE (ENFORCED BY BACKEND):
         `Step number violation: AI returned step ${aiStep}, but we are already at step ${currentStep}.`
       );
     } else if (currentStep >= 1 && aiStep > currentStep + 1) {
-       // Block if AI jumps too far ahead (e.g. from 2 to 5)
-       console.error(`[STEP VIOLATION] AI jumped too far to step ${aiStep} from ${currentStep}.`);
-       // We allow a +1 jump normally, but not more.
+      // Block if AI jumps too far ahead (e.g. from 2 to 5)
+      console.error(`[STEP VIOLATION] AI jumped too far to step ${aiStep} from ${currentStep}.`);
+      // We allow a +1 jump normally, but not more.
     }
     // Note: We now ALLOW aiStep === currentStep (repeating a step for more info)
     // and aiStep === currentStep + 1 (normal progression).
