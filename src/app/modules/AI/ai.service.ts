@@ -10,13 +10,8 @@ import { TechnicianServices } from '../technician/technician.service';
  * Part of the "Backend Enforcement Layer".
  */
 const validateTechnicianInput = (userInput: string, expectedOptions: string[]) => {
-  // If no options set yet, always allow (intake phase)
-  if (!expectedOptions || expectedOptions.length === 0) return true;
-
   const normalizedInput = String(userInput).toLowerCase().trim();
 
-  // Only block if input is PURELY vague with no real technical content
-  // The AI will handle interpretation of everything else
   const purelyVaguePhrases = [
     "looks good",
     "seems fine",
@@ -38,8 +33,11 @@ const validateTechnicianInput = (userInput: string, expectedOptions: string[]) =
 
   const isPurelyVague = purelyVaguePhrases.some(phrase => normalizedInput === phrase || normalizedInput === phrase + ".");
 
-  // Block ONLY if it's exactly a vague phrase (nothing else added)
+  // Block if it's exactly a vague phrase
   if (isPurelyVague) return false;
+
+  // If no options set yet (intake phase), allow everything else
+  if (!expectedOptions || expectedOptions.length === 0) return true;
 
   // Everything else passes — the AI will interpret it
   return true;
@@ -247,8 +245,8 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt?
     return { status: 'success', message: "Previous concern paused. Starting new diagnostic. Please describe the issue." };
   }
 
-  // 3. BACKEND ENFORCEMENT: Validate Technician Input (Vague Proof Gate)
-  // Document spec: { accepted: false, reason: "...", message: "..." }
+  // 3. Validate Input (Backend Enforcement)
+  // Check for purely vague phrases even if expectedOptions is empty (to prevent repetitive lock cards)
   const isValidInput = validateTechnicianInput(userInput, (session.expectedOptions as string[]) || []);
   if (!isValidInput) {
     const errorResponse = {
