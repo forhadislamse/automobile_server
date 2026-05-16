@@ -101,7 +101,8 @@ ${upgradePrompts}
         : `Diagnostic support for ${diagnosticData.system_focus} systems is restricted. Please upgrade to a specialized plan to continue this investigation.`,
       vehicle: diagnosticData.vehicle,
       concern: diagnosticData.concern,
-      system_focus: diagnosticData.system_focus
+      system_focus: diagnosticData.system_focus,
+      full_text_response: "Diagnostic access restricted. Upgrade required to continue."
     };
   }
 
@@ -312,7 +313,8 @@ CURRENT SESSION STATE (ENFORCED BY BACKEND):
         : `Support for ${diagnosticData.system_focus} systems is exclusive to specialist plans. Investigation locked.`,
       vehicle: diagnosticData.vehicle || session.vehicleData,
       concern: diagnosticData.concern || session.activeConcern,
-      system_focus: diagnosticData.system_focus
+      system_focus: diagnosticData.system_focus,
+      full_text_response: "Diagnostic access restricted. Upgrade required to continue."
     };
   }
 
