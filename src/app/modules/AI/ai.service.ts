@@ -96,9 +96,12 @@ ${upgradePrompts}
   if (planCategory === 'BASIC' && hasVehicle && (isEuropean || isRestrictedDomain)) {
     diagnosticData = {
       status: 'PLAN_LOCKED',
-      message: isEuropean
-        ? `Diagnostic data for European brands (${diagnosticData.vehicle}) is restricted. This session is locked under your current plan. Please contact your shop owner to upgrade to the European or Professional plan.`
-        : `Diagnostic support for ${diagnosticData.system_focus} systems is restricted. Please upgrade to a specialized plan to continue this investigation.`,
+      step_title: "Upgrade Required",
+      instruction: isEuropean 
+        ? `Diagnostic data for European brands (${diagnosticData.vehicle}) is restricted under your current plan.`
+        : `Diagnostic support for ${diagnosticData.system_focus} systems is restricted.`,
+      what_to_check: "Please contact your shop owner to upgrade to the European or Professional plan.",
+      response_options: [],
       vehicle: diagnosticData.vehicle,
       concern: diagnosticData.concern,
       system_focus: diagnosticData.system_focus,
@@ -308,9 +311,12 @@ CURRENT SESSION STATE (ENFORCED BY BACKEND):
   if (planCategory === 'BASIC' && (isEuropean || isRestrictedDomain)) {
     diagnosticData = {
       status: 'PLAN_LOCKED',
-      message: isEuropean
-        ? `Diagnostic support for European brands (${diagnosticData.vehicle}) is restricted under your current plan. This investigation is locked. Please contact your shop owner to upgrade.`
-        : `Support for ${diagnosticData.system_focus} systems is exclusive to specialist plans. Investigation locked.`,
+      step_title: "Upgrade Required",
+      instruction: isEuropean
+        ? `Diagnostic support for European brands (${diagnosticData.vehicle}) is restricted under your current plan.`
+        : `Support for ${diagnosticData.system_focus} systems is exclusive to specialist plans.`,
+      what_to_check: "Investigation locked. Please upgrade your plan to continue.",
+      response_options: [],
       vehicle: diagnosticData.vehicle || session.vehicleData,
       concern: diagnosticData.concern || session.activeConcern,
       system_focus: diagnosticData.system_focus,
