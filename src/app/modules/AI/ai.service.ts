@@ -10,26 +10,31 @@ import { TechnicianServices } from '../technician/technician.service';
  * Part of the "Backend Enforcement Layer".
  */
 const validateTechnicianInput = (userInput: string, expectedOptions: string[]) => {
-  if (!expectedOptions || expectedOptions.length === 0) return true; // Initial input or no options yet
+  // If no options set yet, always allow (intake phase)
+  if (!expectedOptions || expectedOptions.length === 0) return true;
 
   const normalizedInput = String(userInput).toLowerCase().trim();
-  
-  // 1. Check for vague or invalid proof language
-  const invalidPhrases = ["looks good", "seems fine", "i think", "probably", "should be okay", "checked it", "tested okay"];
-  
-  // Only reject if it's a vague phrase AND doesn't match any valid option
-  const isVague = invalidPhrases.some(phrase => normalizedInput.includes(phrase));
-  const matchesOption = expectedOptions.some(option => {
-    const opt = String(option).toLowerCase().trim();
-    return normalizedInput === opt || normalizedInput.includes(opt) || opt.includes(normalizedInput);
-  });
 
-  if (isVague && !matchesOption) {
-    return false;
-  }
+  // Only block if input is PURELY vague with no real technical content
+  // The AI will handle interpretation of everything else
+  const purelyVaguePhrases = [
+    "looks good",
+    "seems fine", 
+    "i think so",
+    "probably fine",
+    "should be okay",
+    "idk",
+    "not sure",
+    "maybe",
+  ];
 
-  // 2. Return match result
-  return matchesOption;
+  const isPurelyVague = purelyVaguePhrases.some(phrase => normalizedInput === phrase || normalizedInput === phrase + ".");
+
+  // Block ONLY if it's exactly a vague phrase (nothing else added)
+  if (isPurelyVague) return false;
+
+  // Everything else passes — the AI will interpret it
+  return true;
 };
 
 const startNewChat = async (userId: string, ownerId: string, payload: { prompt?: string, image?: string }) => {
