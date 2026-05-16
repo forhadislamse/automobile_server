@@ -240,7 +240,7 @@ const sendMessage = async (userId: string, payload: { sessionId: string, prompt?
   const previousMessages = await prisma.chatMessage.findMany({
     where: { sessionId: session.id },
     orderBy: { createdAt: 'asc' },
-    take: 20
+    take: 100 // Increased from 20 to ensure full memory of long diagnostics
   });
 
   const history = previousMessages.map(msg => ({
@@ -266,6 +266,11 @@ The current technician input is: "${userInput}".
 3. **RESPONSE OPTIONS**: Set "response_options" to an EMPTY ARRAY []. Do NOT provide any buttons during the intake phase.
 4. **DIAGNOSTIC OPTIONS (CRITICAL)**: From Step 1 onwards, ensure your "response_options" are DIVERSE and COMPREHENSIVE (aim for 4-6 options to cover all bases). Include all common technical outcomes, situational blockers (e.g., "found other damage", "tool won't fit"), and alternative findings so the technician always has a matching button.
 5. Be conversational but precise.
+
+### STEP PROGRESSION (CRITICAL) ###
+1. For every NEW diagnostic action or test you propose, you MUST increment the "step_number" sequentially (e.g., if the highest prior step was 9, your next response MUST be Step 10).
+2. Do NOT repeat the same step number for different actions.
+3. Do NOT go backwards in step numbering.
 
 ### ENABLED PLAN UPGRADES ###
 ${upgradePrompts}
