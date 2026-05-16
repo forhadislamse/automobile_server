@@ -87,26 +87,44 @@ ${upgradePrompts}
 
   // 3.5 BACKEND ENFORCEMENT: Plan Check (Overrule AI if needed)
   const vehicle = (diagnosticData.vehicle || "").toLowerCase();
+  const systemFocus = (diagnosticData.system_focus || "").toLowerCase();
+  
   const isEuropean = /bmw|audi|mercedes|volkswagen|vw|volvo|porsche|land rover|jaguar|fiat|alfa|mini|bentley/.test(vehicle);
-  const isRestrictedDomain = /transmission|electrical/.test((diagnosticData.system_focus || "").toLowerCase());
+  const isAdvancedSystem = /control|network/.test(systemFocus); // Upgrade 9: Control Module Strategy
+  const isSpecializedSystem = /transmission|electrical/.test(systemFocus); // Upgrade 8: Scan Data Interpretation
 
   // Only lock if we actually have a vehicle name (prevents locking on "Hello" or "Hi")
   const hasVehicle = vehicle && vehicle !== "unknown" && vehicle.length > 3;
 
-  if (planCategory === 'BASIC' && hasVehicle && (isEuropean || isRestrictedDomain)) {
+  // RULE A: European vehicles OR Control/Network systems ONLY for EUROPEAN plan (Upgrade 4 & 9)
+  const needsEuropeanPlan = (isEuropean || isAdvancedSystem) && planCategory !== 'EUROPEAN';
+  // RULE B: Restricted domains (Transmission/Electrical) ONLY for PROFESSIONAL or EUROPEAN plans
+  const needsProPlan = isSpecializedSystem && planCategory === 'BASIC';
+
+  if (hasVehicle && (needsEuropeanPlan || needsProPlan)) {
+    const lockReason = isEuropean 
+      ? `European brand diagnostic (${diagnosticData.vehicle})`
+      : isAdvancedSystem 
+        ? `Advanced ${diagnosticData.system_focus} system diagnostic`
+        : `Specialized ${diagnosticData.system_focus} system diagnostic`;
+
     diagnosticData = {
       accepted: true,
       step_number: 0,
       step_title: "Plan Restriction",
-      current_assessment: `The requested vehicle (${diagnosticData.vehicle}) belongs to a restricted category under your current plan.`,
-      instruction: "Diagnostic Access Locked: Upgrade Required",
-      what_to_check: "Please contact your shop owner to upgrade to the European or Professional plan to access this tool.",
+      current_assessment: `${lockReason} is restricted under your current plan.`,
+      instruction: needsEuropeanPlan
+        ? "Access Locked: European Plan Required"
+        : "Access Locked: Professional Plan Required",
+      what_to_check: needsEuropeanPlan
+        ? "Please contact your shop owner to upgrade to the EUROPEAN plan for advanced module and European brand access."
+        : "Please contact your shop owner to upgrade to the PROFESSIONAL plan for specialized system diagnostics.",
       response_options: [],
       state_action: "awaiting_response",
       vehicle: diagnosticData.vehicle,
       concern: diagnosticData.concern,
       system_focus: diagnosticData.system_focus,
-      full_text_response: "Upgrade required to access diagnostic data for this vehicle brand.",
+      full_text_response: "Upgrade required to access this advanced diagnostic domain.",
       is_locked: true
     };
   }
@@ -307,25 +325,42 @@ CURRENT SESSION STATE (ENFORCED BY BACKEND):
   }
 
   // 7. BACKEND ENFORCEMENT: Plan Check (Overrule AI if needed)
-  const isEuropean = /bmw|audi|mercedes|volkswagen|vw|volvo|porsche|land rover|jaguar|fiat|alfa|mini|bentley/.test((diagnosticData.vehicle || "").toLowerCase());
-  const isRestrictedDomain = /transmission|electrical/.test((diagnosticData.system_focus || "").toLowerCase());
+  const vehicle = (diagnosticData.vehicle || "").toLowerCase();
+  const systemFocus = (diagnosticData.system_focus || "").toLowerCase();
+  
+  const isEuropean = /bmw|audi|mercedes|volkswagen|vw|volvo|porsche|land rover|jaguar|fiat|alfa|mini|bentley/.test(vehicle);
+  const isAdvancedSystem = /control|network/.test(systemFocus); // Upgrade 9: Control Module Strategy
+  const isSpecializedSystem = /transmission|electrical/.test(systemFocus); // Upgrade 8: Scan Data Interpretation
 
-  if (planCategory === 'BASIC' && (isEuropean || isRestrictedDomain)) {
+  // RULE A: European vehicles OR Control/Network systems ONLY for EUROPEAN plan (Upgrade 4 & 9)
+  const needsEuropeanPlan = (isEuropean || isAdvancedSystem) && planCategory !== 'EUROPEAN';
+  // RULE B: Restricted domains (Transmission/Electrical) ONLY for PROFESSIONAL or EUROPEAN plans
+  const needsProPlan = isSpecializedSystem && planCategory === 'BASIC';
+
+  if (needsEuropeanPlan || needsProPlan) {
+    const lockReason = isEuropean 
+      ? `European brand diagnostic (${diagnosticData.vehicle})`
+      : isAdvancedSystem 
+        ? `Advanced ${diagnosticData.system_focus} system diagnostic`
+        : `Specialized ${diagnosticData.system_focus} system diagnostic`;
+
     diagnosticData = {
       accepted: true,
       step_number: session.currentStep,
-      step_title: "System Restriction",
-      current_assessment: isEuropean
-        ? `Diagnostic support for European brands (${diagnosticData.vehicle}) is restricted.`
-        : `Support for ${diagnosticData.system_focus} systems is exclusive to specialized plans.`,
-      instruction: "Investigation Locked: Plan Upgrade Required",
-      what_to_check: "Please upgrade your subscription to continue this specialized diagnostic.",
+      step_title: "Plan Restriction",
+      current_assessment: `${lockReason} is restricted under your current plan.`,
+      instruction: needsEuropeanPlan
+        ? "Access Locked: European Plan Required"
+        : "Access Locked: Professional Plan Required",
+      what_to_check: needsEuropeanPlan
+        ? "Please contact your shop owner to upgrade to the EUROPEAN plan for advanced module and European brand access."
+        : "Please contact your shop owner to upgrade to the PROFESSIONAL plan for specialized system diagnostics.",
       response_options: [],
       state_action: "awaiting_response",
       vehicle: diagnosticData.vehicle || session.vehicleData,
       concern: diagnosticData.concern || session.activeConcern,
       system_focus: diagnosticData.system_focus,
-      full_text_response: "Diagnostic access restricted. Upgrade required to continue.",
+      full_text_response: "Upgrade required to access this advanced diagnostic domain.",
       is_locked: true
     };
   }
