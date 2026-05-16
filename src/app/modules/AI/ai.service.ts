@@ -95,22 +95,24 @@ ${upgradePrompts}
 
   if (planCategory === 'BASIC' && hasVehicle && (isEuropean || isRestrictedDomain)) {
     diagnosticData = {
-      status: 'PLAN_LOCKED',
-      step_title: "Upgrade Required",
-      instruction: isEuropean 
-        ? `Diagnostic data for European brands (${diagnosticData.vehicle}) is restricted under your current plan.`
-        : `Diagnostic support for ${diagnosticData.system_focus} systems is restricted.`,
-      what_to_check: "Please contact your shop owner to upgrade to the European or Professional plan.",
+      accepted: true,
+      step_number: 0,
+      step_title: "Plan Restriction",
+      current_assessment: `The requested vehicle (${diagnosticData.vehicle}) belongs to a restricted category under your current plan.`,
+      instruction: "Diagnostic Access Locked: Upgrade Required",
+      what_to_check: "Please contact your shop owner to upgrade to the European or Professional plan to access this tool.",
       response_options: [],
+      state_action: "awaiting_response",
       vehicle: diagnosticData.vehicle,
       concern: diagnosticData.concern,
       system_focus: diagnosticData.system_focus,
-      full_text_response: "Diagnostic access restricted. Upgrade required to continue."
+      full_text_response: "Upgrade required to access diagnostic data for this vehicle brand.",
+      is_locked: true
     };
   }
 
-  // 4. If PLAN_LOCKED, create a minimal session, save messages, and return early
-  if (diagnosticData.status === 'PLAN_LOCKED') {
+  // 4. If locked, create a minimal session, save messages, and return early
+  if (diagnosticData.is_locked) {
     const vehicleLabel = diagnosticData.vehicle || userPrompt;
     const concernLabel = diagnosticData.concern || "Restricted Diagnostic";
 
@@ -310,18 +312,30 @@ CURRENT SESSION STATE (ENFORCED BY BACKEND):
 
   if (planCategory === 'BASIC' && (isEuropean || isRestrictedDomain)) {
     diagnosticData = {
-      status: 'PLAN_LOCKED',
-      step_title: "Upgrade Required",
-      instruction: isEuropean
-        ? `Diagnostic support for European brands (${diagnosticData.vehicle}) is restricted under your current plan.`
-        : `Support for ${diagnosticData.system_focus} systems is exclusive to specialist plans.`,
-      what_to_check: "Investigation locked. Please upgrade your plan to continue.",
+      accepted: true,
+      step_number: session.currentStep,
+      step_title: "System Restriction",
+      current_assessment: isEuropean
+        ? `Diagnostic support for European brands (${diagnosticData.vehicle}) is restricted.`
+        : `Support for ${diagnosticData.system_focus} systems is exclusive to specialized plans.`,
+      instruction: "Investigation Locked: Plan Upgrade Required",
+      what_to_check: "Please upgrade your subscription to continue this specialized diagnostic.",
       response_options: [],
+      state_action: "awaiting_response",
       vehicle: diagnosticData.vehicle || session.vehicleData,
       concern: diagnosticData.concern || session.activeConcern,
       system_focus: diagnosticData.system_focus,
-      full_text_response: "Diagnostic access restricted. Upgrade required to continue."
+      full_text_response: "Diagnostic access restricted. Upgrade required to continue.",
+      is_locked: true
     };
+  }
+
+  // Early return if locked
+  if (diagnosticData.is_locked) {
+    const assistantMessage = await prisma.chatMessage.create({
+      data: { sessionId: session.id, role: 'assistant', content: JSON.stringify(diagnosticData) }
+    });
+    return { session, assistantMessage, status: 'success' };
   }
 
   // 7.5 BACKEND ENFORCEMENT: Step Number Validation
