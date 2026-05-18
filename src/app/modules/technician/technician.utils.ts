@@ -32,7 +32,7 @@ export const technicianInvitationTemplate = (shopName: string, passkey: string) 
       </div>
       <p style="font-size: 16px; color: #555;">You can login using your email and the passkey above at:</p>
       <div style="text-align: center; margin: 30px 0;">
-        <a href="https://regwheat-frontend.vercel.app/login" style="background-color: #007bff; color: #fff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Login to Dashboard</a>
+        <a href="https://regwheat-frontend-v2.vercel.app/login" style="background-color: #007bff; color: #fff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Login to Dashboard</a>
       </div>
       <p style="font-size: 14px; color: #999; text-align: center;">If you did not expect this invitation, please ignore this email.</p>
       <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
