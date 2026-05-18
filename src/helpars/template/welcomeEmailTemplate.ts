@@ -121,7 +121,7 @@ export const welcomeEmailTemplate = (fullName: string) => `
 
             <p>Click the button below to log in to your dashboard and get started:</p>
 
-            <a href="https://regwheat-frontend.vercel.app/login" class="button">
+            <a href="https://regwheat-frontend-v2.vercel.app/login" class="button">
                 Go to Dashboard
             </a>
 
