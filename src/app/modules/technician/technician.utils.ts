@@ -23,14 +23,14 @@
 export const technicianInvitationTemplate = (shopName: string, passkey: string) => {
   return `
   <div style="margin: 0; padding: 20px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; min-height: 100%;">
-    <div style="max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+    <div style="width: 100%; max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
       
       <!-- 🎨 HEADER BANNER -->
       <div style="background-color: #1e3a8a; background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 40px 30px; text-align: center; color: #ffffff;">
         <h1 style="margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; color: #ffffff;">
           SmartAutoTech AI
         </h1>
-        <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9; color: #ffd700; font-weight: 500;">
+        <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9; color: #e0f2fe; font-weight: 500;">
           Welcome to ${shopName}!
         </p>
       </div>
