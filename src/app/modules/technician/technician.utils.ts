@@ -30,7 +30,7 @@ export const technicianInvitationTemplate = (shopName: string, passkey: string) 
         <h1 style="margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
           SmartAutoTech AI
         </h1>
-        <p style="margin: 10px 0 0 0; font-size: 16px; color: #475569; font-weight: 500;">
+        <p style="margin: 10px 0 0 0; font-size: 16px; color: #475569; font-weight: bold;">
           Welcome to ${shopName}!
         </p>
       </div>
