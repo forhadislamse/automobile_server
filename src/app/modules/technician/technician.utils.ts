@@ -26,11 +26,11 @@ export const technicianInvitationTemplate = (shopName: string, passkey: string) 
     <div style="width: 100%; max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
       
       <!-- 🎨 HEADER BANNER -->
-      <div style="background-color: #1e3a8a; background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 40px 30px; text-align: center; color: #ffffff;">
-        <h1 style="margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; color: #ffffff;">
+      <div style="background-color: #f1f5f9; padding: 45px 30px; text-align: center; border-bottom: 1px solid #e2e8f0;">
+        <h1 style="margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
           SmartAutoTech AI
         </h1>
-        <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9; color: #e0f2fe; font-weight: 500;">
+        <p style="margin: 10px 0 0 0; font-size: 16px; color: #475569; font-weight: 500;">
           Welcome to ${shopName}!
         </p>
       </div>
@@ -47,18 +47,18 @@ export const technicianInvitationTemplate = (shopName: string, passkey: string) 
         </p>
 
         <!-- 🔑 PASSKEY CARD -->
-        <div style="background-color: #f8fafc; border-radius: 12px; padding: 24px; text-align: center; border: 1px dashed #3b82f6; margin: 28px 0;">
+        <div style="background-color: #f8fafc; border-radius: 12px; padding: 24px; text-align: center; border: 1px dashed #cbd5e1; margin: 28px 0;">
           <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">
             Your Temporary Passkey
           </p>
-          <div style="display: inline-block; font-size: 28px; font-weight: bold; color: #1e3a8a; letter-spacing: 3px; font-family: 'Courier New', Courier, monospace; background-color: #ffffff; padding: 12px 28px; border-radius: 8px; border: 1px solid #e2e8f0;">
+          <div style="display: inline-block; font-size: 28px; font-weight: bold; color: #0f172a; letter-spacing: 3px; font-family: 'Courier New', Courier, monospace; background-color: #ffffff; padding: 12px 28px; border-radius: 8px; border: 1px solid #e2e8f0;">
             ${passkey}
           </div>
         </div>
 
         <!-- 🚀 ACTIVATE BUTTON -->
         <div style="text-align: center; margin: 32px 0;">
-          <a href="https://regwheat-frontend-v2.vercel.app/login" style="display: inline-block; background-color: #1e3a8a; background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; text-align: center;">
+          <a href="https://regwheat-frontend-v2.vercel.app/login" style="display: inline-block; background-color: #0f172a; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; text-align: center;">
             Activate Your Account
           </a>
         </div>
