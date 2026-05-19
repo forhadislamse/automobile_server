@@ -3,7 +3,7 @@
 // export const registrationOtpTemplate = (otp: number) => `
 //   <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
 //     <div style="max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.1);">
-        
+
 //         <!-- 🎨 HERO BANNER -->
 //         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center; color: white;">
 //             <h1 style="margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -0.5px;">
@@ -14,7 +14,7 @@
 
 //         <!-- 📱 MAIN CONTENT -->
 //         <div style="padding: 40px 30px;">
-            
+
 //             <!-- 💬 VERIFICATION CARD -->
 //             <div style="background: #f8f9ff; border-radius: 16px; padding: 30px; text-align: center; border: 1px solid #e1e8ff; margin-bottom: 30px;">
 //                 <div style="margin-bottom: 20px;">
@@ -22,9 +22,9 @@
 //                         🔐
 //                     </span>
 //                 </div>
-                
+
 //                 <h2 style="color: #2d3748; font-size: 24px; margin: 0 0 15px 0; font-weight: 600;">Your Verification Code</h2>
-                
+
 //                 <!-- 🎯 OTP DISPLAY -->
 //                 <div style="background: white; border-radius: 12px; padding: 20px; border: 2px solid #e2e8f0; margin: 20px 0;">
 //                     <div style="font-size: 48px; font-weight: 800; color: #4a5568; letter-spacing: 8px; margin: 0; font-family: 'Courier New', monospace;">

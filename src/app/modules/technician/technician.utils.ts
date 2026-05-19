@@ -22,12 +22,12 @@
 
 export const technicianInvitationTemplate = (shopName: string, passkey: string) => {
   return `
-  <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6;">
-    <div style="max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+  <div style="margin: 0; padding: 20px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; min-height: 100%;">
+    <div style="max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
       
       <!-- 🎨 HEADER BANNER -->
-      <div style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 40px 30px; text-align: center; color: white;">
-        <h1 style="margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">
+      <div style="background-color: #1e3a8a; background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 40px 30px; text-align: center; color: #ffffff;">
+        <h1 style="margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; color: #ffffff;">
           SmartAutoTech AI
         </h1>
         <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9; color: #ffd700; font-weight: 500;">
@@ -47,18 +47,18 @@ export const technicianInvitationTemplate = (shopName: string, passkey: string) 
         </p>
 
         <!-- 🔑 PASSKEY CARD -->
-        <div style="background: #f8fafc; border-radius: 12px; padding: 24px; text-align: center; border: 1px dashed #3b82f6; margin: 28px 0;">
+        <div style="background-color: #f8fafc; border-radius: 12px; padding: 24px; text-align: center; border: 1px dashed #3b82f6; margin: 28px 0;">
           <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">
             Your Temporary Passkey
           </p>
-          <div style="display: inline-block; font-size: 32px; font-weight: bold; color: #1e3a8a; letter-spacing: 3px; font-family: 'Courier New', monospace; background: #ffffff; padding: 10px 28px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+          <div style="display: inline-block; font-size: 28px; font-weight: bold; color: #1e3a8a; letter-spacing: 3px; font-family: 'Courier New', Courier, monospace; background-color: #ffffff; padding: 12px 28px; border-radius: 8px; border: 1px solid #e2e8f0;">
             ${passkey}
           </div>
         </div>
 
         <!-- 🚀 ACTIVATE BUTTON -->
         <div style="text-align: center; margin: 32px 0;">
-          <a href="https://regwheat-frontend-v2.vercel.app/login" style="display: inline-block; background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.25); transition: all 0.2s;">
+          <a href="https://regwheat-frontend-v2.vercel.app/login" style="display: inline-block; background-color: #1e3a8a; background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; text-align: center;">
             Activate Your Account
           </a>
         </div>
@@ -69,7 +69,7 @@ export const technicianInvitationTemplate = (shopName: string, passkey: string) 
       </div>
 
       <!-- 👟 FOOTER -->
-      <div style="background: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+      <div style="background-color: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
         <p style="color: #64748b; font-size: 14px; margin: 0 0 6px 0; font-weight: 600;">
           SmartAutoTech Team
         </p>
@@ -78,7 +78,7 @@ export const technicianInvitationTemplate = (shopName: string, passkey: string) 
         </p>
       </div>
     </div>
-  </body>
+  </div>
   `;
 };
 
