@@ -64,71 +64,64 @@
 //                 © SmartAutoTech. All rights reserved.
 //             </p>
 //         </div>
-//     </div>
-// </body>
-// `;
-
-
-
 export const registrationOtpTemplate = (otp: number) => `
-  <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-    <div style="max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.1);">
-        
-        <!-- 🎨 HERO BANNER -->
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center; color: white;">
-            <h1 style="margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -0.5px;">
-                 <span style="color: #ffd700;">Welcome to SmartAutoTech</span>
-            </h1>
-            <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9; color: #ffd700">Let's verify your account! ✨</p>
-        </div>
+<div style="margin: 0; padding: 20px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; min-height: 100%;">
+  <div style="width: 100%; max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+      
+      <!-- 🎨 HERO BANNER -->
+      <div style="background-color: #f1f5f9; padding: 45px 30px; text-align: center; border-bottom: 1px solid #e2e8f0;">
+          <h1 style="margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; color: #0f172a;">
+               Welcome to SmartAutoTech
+          </h1>
+          <p style="margin: 10px 0 0 0; font-size: 16px; color: #475569; font-weight: bold;">Let's verify your account! ✨</p>
+      </div>
 
-        <!-- 📱 MAIN CONTENT -->
-        <div style="padding: 40px 30px;">
-            
-            <!-- 💬 VERIFICATION CARD -->
-            <div style="background: #f8f9ff; border-radius: 16px; padding: 30px; text-align: center; border: 1px solid #e1e8ff; margin-bottom: 30px;">
-                <div style="margin-bottom: 20px;">
-                    <span style="display: inline-block; width: 60px; height: 60px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 50%; line-height: 60px; font-size: 24px; color: white; font-weight: bold;">
-                        🔐
-                    </span>
-                </div>
-                
-                <h2 style="color: #2d3748; font-size: 24px; margin: 0 0 15px 0; font-weight: 600;">Your Verification Code</h2>
-                
-                <!-- 🎯 OTP DISPLAY -->
-                <div style="background: white; border-radius: 12px; padding: 20px; border: 2px solid #e2e8f0; margin: 20px 0;">
-                    <div style="font-size: 48px; font-weight: 800; color: #4a5568; letter-spacing: 8px; margin: 0; font-family: 'Courier New', monospace;">
-                        ${otp}
-                    </div>
-                </div>
-            </div>
+      <!-- 📱 MAIN CONTENT -->
+      <div style="padding: 40px 30px;">
+          
+          <!-- 💬 VERIFICATION CARD -->
+          <div style="background-color: #f8fafc; border-radius: 16px; padding: 30px; text-align: center; border: 1px solid #e2e8f0; margin-bottom: 30px;">
+              <div style="margin-bottom: 20px; text-align: center;">
+                  <span style="display: inline-block; width: 60px; height: 60px; background-color: #f1f5f9; border-radius: 50%; line-height: 60px; font-size: 28px; text-align: center;">
+                      🔐
+                  </span>
+              </div>
+              
+              <h2 style="color: #0f172a; font-size: 22px; margin: 0 0 15px 0; font-weight: 600;">Your Verification Code</h2>
+              
+              <!-- 🎯 OTP DISPLAY -->
+              <div style="background-color: #ffffff; border-radius: 12px; padding: 20px; border: 2px solid #e2e8f0; margin: 20px 0; text-align: center;">
+                  <div style="font-size: 44px; font-weight: 800; color: #0f172a; letter-spacing: 8px; margin: 0; font-family: 'Courier New', Courier, monospace;">
+                      ${otp}
+                  </div>
+              </div>
+          </div>
 
-            <!-- ⏰ EXPIRY BAR -->
-            <div style="background: #fff5f5; border-radius: 12px; padding: 20px; text-align: center; border: 1px solid #fed7d7; margin-bottom: 30px;">
-                <div style="background: linear-gradient(to right, #48bb78 0%, #48bb78 60%, #e53e3e 60%, #e53e3e 100%); height: 6px; border-radius: 3px; margin-bottom: 10px;"></div>
-                <p style="color: #c53030; font-size: 14px; margin: 0; font-weight: 500;">
-                    ⏰ Expires in <strong>5 minutes</strong>
-                </p>
-            </div>
+          <!-- ⏰ EXPIRY BAR -->
+          <div style="background-color: #fff5f5; border-radius: 12px; padding: 20px; text-align: center; border: 1px solid #fed7d7; margin-bottom: 30px;">
+              <p style="color: #c53030; font-size: 14px; margin: 0; font-weight: bold;">
+                  ⏰ Expires in <strong>5 minutes</strong>
+              </p>
+          </div>
 
-            <!-- 📝 INSTRUCTIONS -->
-            <div style="text-align: center; color: #4a5568;">
-                <p style="font-size: 16px; line-height: 1.6; margin-bottom: 10px;">
-                    Enter this code to complete your registration.
-                </p>
-            </div>
-        </div>
+          <!-- 📝 INSTRUCTIONS -->
+          <div style="text-align: center; color: #475569;">
+              <p style="font-size: 16px; line-height: 1.6; margin-bottom: 10px;">
+                  Enter this code to complete your registration.
+              </p>
+          </div>
+      </div>
 
-        <!-- 👟 FOOTER -->
-        <div style="background: #f7fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
-            <p style="color: #a0aec0; font-size: 14px; margin: 0 0 10px 0; line-height: 1.5;">
-                Made with by <strong style="color: #667eea;">SmartAutoTech Team</strong>
-            </p>
-            <p style="color: #a0aec0; font-size: 12px; margin: 0;">
-                © SmartAutoTech. All rights reserved.
-            </p>
-        </div>
-    </div>
-</body>
+      <!-- 👟 FOOTER -->
+      <div style="background-color: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+          <p style="color: #64748b; font-size: 14px; margin: 0 0 6px 0; font-weight: 600;">
+              SmartAutoTech Team
+          </p>
+          <p style="color: #94a3b8; font-size: 12px; margin: 0;">
+              © SmartAutoTech. All rights reserved.
+          </p>
+      </div>
+  </div>
+</div>
 `;
 
