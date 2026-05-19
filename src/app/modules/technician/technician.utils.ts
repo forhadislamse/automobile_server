@@ -28,7 +28,7 @@ export const technicianInvitationTemplate = (shopName: string, passkey: string) 
       <!-- 🎨 HEADER BANNER -->
       <div style="background-color: #f1f5f9; padding: 45px 30px; text-align: center; border-bottom: 1px solid #e2e8f0;">
         <h1 style="margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-          SmartAutoTech AI
+          SmartAutoTech
         </h1>
         <p style="margin: 10px 0 0 0; font-size: 16px; color: #475569; font-weight: bold;">
           Welcome to ${shopName}!
