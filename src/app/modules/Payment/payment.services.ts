@@ -3,7 +3,7 @@ import config from '../../../config';
 import prisma from '../../../shared/prisma';
 import ApiError from '../../../errors/ApiErrors';
 import httpStatus from 'http-status';
-import emailSender from '../../../shared/emailSender';
+import emailSender from '../../../shared/brevoMailSender';
 import { welcomeEmailTemplate } from '../../../helpars/template/welcomeEmailTemplate';
 
 // const stripe = new Stripe(config.stripe.secret_key as string, {
