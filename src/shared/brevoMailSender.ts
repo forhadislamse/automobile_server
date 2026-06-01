@@ -6,8 +6,12 @@ const emailSender = async (email: string, html: string, subject: string) => {
     throw new Error('Missing Brevo API key in configuration');
   }
 
-  const senderEmail = config.brevoMail.email || "i.rforhad@gmail.com";
-  const senderName = config.brevoMail.sender_name || "Regwheat support";
+  if (!config.brevoMail.email) {
+    throw new Error('Missing Brevo sender email in configuration');
+  }
+
+  const senderEmail = config.brevoMail.email;
+  const senderName = config.brevoMail.sender_name || "SmartAutoTech Support";
 
   try {
     const payload = {
