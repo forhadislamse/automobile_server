@@ -36,6 +36,7 @@ const emailSender = async (email: string, html: string, subject: string) => {
       }
     });
 
+    console.log(`[Brevo] Email sent successfully to: ${email} | messageId: ${response.data?.messageId}`);
     return response.data;
   } catch (error: any) {
     // Enhanced error logging for debugging
