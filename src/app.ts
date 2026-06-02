@@ -7,15 +7,23 @@ import GlobalErrorHandler from "./app/middlewares/globalErrorHandler";
 import router from "./app/routes";
 
 const app: Application = express();
-// export const corsOptions = {
-//   origin: ["http://localhost:3001", "http://localhost:3000", "https://sendiate-dashboard.vercel.app/",],
-//   methods: ["GET", "POST", "PUT", "DELETE"],
-//   allowedHeaders: ["Content-Type", "Authorization"],
-//   credentials: true,
-// };
+export const corsOptions = {
+  origin: [
+    "http://localhost:3001",
+    "http://localhost:3000",
+    "http://10.0.20.160:3000",
+    "http://10.0.20.160:3001",
+    "https://smartautotech.ai",
+    "https://www.smartautotech.ai",
+    "https://regwheat-server.vercel.app",
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
+};
 
 // Middleware setup
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(cookieParser());
 
 // Special handling for Stripe Webhook to get raw body
