@@ -15,6 +15,8 @@ export const corsOptions = {
     "http://10.0.20.160:3001",
     "https://smartautotech.ai",
     "https://www.smartautotech.ai",
+    "http://smartautotech.ai",
+    "http://www.smartautotech.ai",
     "https://regwheat-server.vercel.app",
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
