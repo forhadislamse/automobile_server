@@ -58,7 +58,7 @@ export const technicianInvitationTemplate = (shopName: string, passkey: string) 
 
         <!-- 🚀 ACTIVATE BUTTON -->
         <div style="text-align: center; margin: 32px 0;">
-          <a href="https://regwheat-frontend-v2.vercel.app/login" style="display: inline-block; background-color: #0f172a; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; text-align: center;">
+          <a href="https://smartautotech.ai/login" style="display: inline-block; background-color: #0f172a; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; text-align: center;">
             Activate Your Account
           </a>
         </div>
