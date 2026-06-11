@@ -9,14 +9,14 @@ router.post('/create-subscription-intent', auth(UserRole.USER), PaymentControlle
 router.post('/confirm-payment', auth(UserRole.USER), PaymentController.confirmPayment);
 
 
+router.get('/:paymentId', auth(UserRole.USER), PaymentController.getPaymentById);
 router.get('/my-subscriptions', auth(UserRole.USER), PaymentController.getMySubscriptions);
 router.get('/my-payments', auth(UserRole.USER), PaymentController.getMyPaymentHistory);
 router.get('/latest-payment', auth(UserRole.USER), PaymentController.getLatestPayment);
-router.get('/:paymentId', auth(UserRole.USER), PaymentController.getPaymentById);
 router.patch('/subscription/:subscriptionId/cancel-renewal', auth(UserRole.USER), PaymentController.cancelRenewal);
 router.patch('/subscription/:subscriptionId/resume-renewal', auth(UserRole.USER), PaymentController.resumeRenewal);
 router.post('/change-plan', auth(UserRole.USER), PaymentController.changeSubscriptionPlan);
 
-router.post('/webhook', express.raw({ type: 'application/json' }), PaymentController.handleWebhook);
+router.post('/webhook', PaymentController.handleWebhook);
 
 export const PaymentRoutes = router;

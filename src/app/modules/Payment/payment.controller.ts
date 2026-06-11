@@ -29,9 +29,9 @@ const createSubscriptionIntent = catchAsync(async (req: Request, res: Response) 
     });
 });
 
-const handleWebhook = catchAsync(async (req: Request & { rawBody?: Buffer }, res: Response) => {
+const handleWebhook = catchAsync(async (req: Request, res: Response) => {
     const sig = req.headers['stripe-signature'] as string;
-    const result = await PaymentServices.handleWebhook(req.rawBody as any, sig);
+    const result = await PaymentServices.handleWebhook(req.body, sig);
     res.status(200).send(result);
 });
 

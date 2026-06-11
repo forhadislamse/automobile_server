@@ -218,9 +218,8 @@ const handleWebhook = async (payload: string, sig: string) => {
     let event;
 
     try {
-        if (!sig && config.env === 'development') {
-            console.warn("Stripe signature missing. Bypassing verification for Postman testing in development.");
-            // In development, if no signature is provided, parse the payload directly
+        if (!sig && !config.stripe.webhook_secret) {
+            console.warn("Stripe signature missing. Bypassing verification (no WEBHOOK_SECRET configured).");
             event = typeof payload === 'string' ? JSON.parse(payload) : payload;
         } else {
             event = stripe.webhooks.constructEvent(
@@ -433,6 +432,33 @@ const handleWebhook = async (payload: string, sig: string) => {
             });
             break;
 
+
+        case 'invoice.payment_failed':
+            const failedInvoice = event.data.object as Stripe.Invoice;
+            const failedSubId = failedInvoice.subscription as string;
+            const failedPaymentIntentId = failedInvoice.payment_intent as string;
+
+            // Update payment record to FAILED status
+            await prisma.payment.updateMany({
+                where: {
+                    OR: [
+                        { invoiceId: failedInvoice.id },
+                        { transactionId: failedPaymentIntentId }
+                    ]
+                },
+                data: { status: 'FAILED' }
+            });
+
+            // Mark subscription as past_due if exists
+            if (failedSubId) {
+                await prisma.userPlanSubscription.updateMany({
+                    where: { stripeSubscriptionId: failedSubId },
+                    data: { status: 'past_due' as any }
+                });
+            }
+
+            console.log(`[WEBHOOK] Payment failed for invoice: ${failedInvoice.id}`);
+            break;
 
         default:
             console.log(`Unhandled event type ${event.type}`);
