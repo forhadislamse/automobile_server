@@ -35,7 +35,11 @@ const getDashboardStats = async () => {
   });
 
   const activeUsers = await prisma.user.count({
-    where: { status: 'ACTIVE', isDeleted: false }
+    where: { 
+      status: 'ACTIVE', 
+      isDeleted: false,
+      role: { not: UserRole.ADMIN }
+    }
   });
 
   const aiSessionsToday = await prisma.chatSession.count({
@@ -82,6 +86,7 @@ const getDashboardStats = async () => {
     where: {
       status: 'ACTIVE',
       isDeleted: false,
+      role: { not: UserRole.ADMIN },
       updatedAt: { gte: weekStart, lte: weekEnd }
     },
     select: { updatedAt: true }
