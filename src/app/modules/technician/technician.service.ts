@@ -4,8 +4,8 @@ import * as bcrypt from 'bcrypt';
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, format } from 'date-fns';
 import prisma from '../../../shared/prisma';
 import ApiError from '../../../errors/ApiErrors';
-// import emailSender from '../../../shared/brevoMailSender';
-import emailSender from '../../../shared/emailSender';
+import emailSender from '../../../shared/brevoMailSender';
+// import emailSender from '../../../shared/emailSender';
 import { TAddTechnician } from './technician.interface';
 import { technicianInvitationTemplate } from './technician.utils';
 
