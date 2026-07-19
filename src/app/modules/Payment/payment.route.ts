@@ -9,7 +9,6 @@ router.post('/create-subscription-intent', auth(UserRole.USER), PaymentControlle
 router.post('/confirm-payment', auth(UserRole.USER), PaymentController.confirmPayment);
 
 
-router.get('/:paymentId', auth(UserRole.USER), PaymentController.getPaymentById);
 router.get('/my-subscriptions', auth(UserRole.USER), PaymentController.getMySubscriptions);
 router.get('/my-payments', auth(UserRole.USER), PaymentController.getMyPaymentHistory);
 router.get('/latest-payment', auth(UserRole.USER), PaymentController.getLatestPayment);
@@ -18,5 +17,7 @@ router.patch('/subscription/:subscriptionId/resume-renewal', auth(UserRole.USER)
 router.post('/change-plan', auth(UserRole.USER), PaymentController.changeSubscriptionPlan);
 
 router.post('/webhook', PaymentController.handleWebhook);
+
+router.get('/:paymentId', auth(UserRole.USER), PaymentController.getPaymentById);
 
 export const PaymentRoutes = router;

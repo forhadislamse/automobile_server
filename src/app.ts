@@ -13,6 +13,7 @@ export const corsOptions = {
     "http://localhost:3000",
     "http://10.0.20.160:3000",
     "http://10.0.20.160:3001",
+    "http://10.10.13.123:3000",
     "https://smartautotech.ai",
     "https://www.smartautotech.ai",
     "http://smartautotech.ai",
