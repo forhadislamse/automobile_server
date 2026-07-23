@@ -339,6 +339,7 @@ const handleWebhook = async (payload: string, sig: string) => {
                     where: { id: userId },
                     data: {
                         isSubscribed: true,
+                        status: 'ACTIVE',
                         ...(shouldUpdateDate && {
                             planId: planId,
                             subscriptionExpiresAt: expiresAt,
@@ -379,7 +380,7 @@ const handleWebhook = async (payload: string, sig: string) => {
             if (activeSubsCount === 0) {
                 await prisma.user.update({
                     where: { id: ownerDelId },
-                    data: { isSubscribed: false }
+                    data: { isSubscribed: false, planId: null, status: 'INACTIVE' }
                 });
             }
             break;
@@ -414,7 +415,7 @@ const handleWebhook = async (payload: string, sig: string) => {
                 data: { 
                     isSubscribed: hasAccessSubs > 0,
                     subscriptionExpiresAt: subUpExpiresAt,
-                    ...(subUpPlanId && { planId: subUpPlanId })
+                    ...(hasAccessSubs > 0 ? { ...(subUpPlanId && { planId: subUpPlanId }) } : { planId: null, status: 'INACTIVE' })
                 }
             });
 
@@ -554,6 +555,7 @@ const confirmPayment = async (paymentId: string, paymentIntentId: string) => {
         where: { id: payment.userId },
         data: {
             isSubscribed: true,
+            status: 'ACTIVE',
             ...(shouldUpdateDate && {
                 planId: payment.planId,
                 subscriptionExpiresAt: expiresAt,

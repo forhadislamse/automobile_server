@@ -109,6 +109,9 @@ export const registrationOtpTemplate = (otp: number) => `
               <p style="font-size: 16px; line-height: 1.6; margin-bottom: 10px;">
                   Enter this code to complete your registration.
               </p>
+              <p style="font-size: 14px; color: #dc2626; font-weight: bold; margin-top: 15px;">
+                  If you do not see the email in your inbox, please check your Spam, Junk, or Bulk Mail folders.
+              </p>
           </div>
       </div>
 

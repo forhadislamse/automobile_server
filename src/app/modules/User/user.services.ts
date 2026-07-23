@@ -69,9 +69,11 @@ const getMyProfile = async (userToken: string) => {
       // Truly expired
       await prisma.user.update({
         where: { id: userProfile.id },
-        data: { isSubscribed: false }
+        data: { isSubscribed: false, planId: null, status: 'INACTIVE' }
       });
       userProfile.isSubscribed = false;
+      userProfile.planId = null;
+      userProfile.status = 'INACTIVE';
     }
   }
 

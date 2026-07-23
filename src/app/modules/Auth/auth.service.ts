@@ -41,7 +41,14 @@ const createUserIntoDb = async (payload: any) => {
   }
 
   const existingEmail = await prisma.user.findUnique({ where: { email } });
-  if (existingEmail) throw new ApiError(400, "Email already exists");
+  if (existingEmail) {
+    if (existingEmail.status === "INCOMPLETE") {
+      // Delete incomplete user to allow re-registration
+      await prisma.user.delete({ where: { id: existingEmail.id } });
+    } else {
+      throw new ApiError(400, "Email already exists");
+    }
+  }
 
   const hashedPassword = await bcrypt.hash(password, 10);
 

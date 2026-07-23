@@ -10,7 +10,7 @@ const getDashboardStats = async () => {
 
   // 1. Top Card Stats
   const activeShops = await prisma.user.count({
-    where: { role: UserRole.USER, status: 'ACTIVE', isDeleted: false }
+    where: { role: UserRole.USER, status: 'ACTIVE', isSubscribed: true, isDeleted: false }
   });
 
   const activeSubscriptions = await prisma.userPlanSubscription.count({
@@ -185,6 +185,18 @@ const getAllShops = async (filters: any, options: any) => {
             category: (filterData as any)[key],
           },
         });
+      } else if (key === 'status') {
+        const val = (filterData as any)[key];
+        if (val === 'ACTIVE') {
+          andConditions.push({
+            status: 'ACTIVE',
+            isSubscribed: true
+          });
+        } else {
+          andConditions.push({
+            status: val as any
+          });
+        }
       } else {
         andConditions.push({
           [key]: {
