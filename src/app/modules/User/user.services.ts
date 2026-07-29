@@ -98,12 +98,14 @@ const updateUserProfile = async (
 
   // Handle profile image upload
   if (file) {
-    const uploadedImageUrl = await fileUploader.uploadToDigitalOcean(file);
+    // const uploadedImageUrl = await fileUploader.uploadToDigitalOcean(file);
+    const uploadedImageUrl = await fileUploader.uploadToCloudinary(file);
     updateData.profileImage = uploadedImageUrl.Location;
 
     // Delete old image if exists
     if (user.profileImage) {
-      await deleteImageAndFile.deleteFileFromDigitalOcean(user.profileImage);
+      // await deleteImageAndFile.deleteFileFromDigitalOcean(user.profileImage);
+      await deleteImageAndFile.deleteFileFromCloudinary(user.profileImage);
     }
   }
 

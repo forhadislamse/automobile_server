@@ -45,7 +45,10 @@ const updateProfileImage = catchAsync(async (req: Request, res: Response) => {
   }
 
   // DigitalOcean image upload
-  const uploaded = await fileUploader.uploadToDigitalOcean(file);
+  // const uploaded = await fileUploader.uploadToDigitalOcean(file);
+  
+  // Cloudinary image upload
+  const uploaded = await fileUploader.uploadToCloudinary(file);
   const imageUrl = uploaded.Location;
 
   // service call to update user profile image

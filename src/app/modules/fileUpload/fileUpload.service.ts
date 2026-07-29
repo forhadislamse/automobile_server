@@ -13,7 +13,8 @@ const uploadImages = async (req:any) => {
     throw new ApiError(httpStatus.BAD_REQUEST, "No images provided");
   }
 
-  const uploadPromises = files.images.map(file => fileUploader.uploadToDigitalOcean(file));
+  // const uploadPromises = files.images.map(file => fileUploader.uploadToDigitalOcean(file));
+  const uploadPromises = files.images.map(file => fileUploader.uploadToCloudinary(file));
   const uploadedImages = await Promise.all(uploadPromises);
 
   const imageUrls = uploadedImages.map(img => img.Location);
@@ -28,7 +29,8 @@ const uploadImages = async (req:any) => {
 
 const deleteFiles = async (files:any) => {
 
-  const deleted = await deleteImageAndFile.deleteMultipleFileFromDigitalOcean(files);
+  // const deleted = await deleteImageAndFile.deleteMultipleFileFromDigitalOcean(files);
+  const deleted = await deleteImageAndFile.deleteMultipleFileFromCloudinary(files);
 
   if (!deleted) {
     throw new ApiError(httpStatus.NOT_FOUND, " Image delete failed!");
@@ -40,7 +42,8 @@ const deleteFiles = async (files:any) => {
 const deleteFile = async (file:string) => {
   // console.log(file);
 
-  const deleted = await deleteImageAndFile.deleteFileFromDigitalOcean(file);
+  // const deleted = await deleteImageAndFile.deleteFileFromDigitalOcean(file);
+  const deleted = await deleteImageAndFile.deleteFileFromCloudinary(file);
 
   if (!deleted) {
     throw new ApiError(httpStatus.NOT_FOUND, " Image delete failed!");
@@ -56,7 +59,8 @@ const uploadSingleImageService = async (file: Express.Multer.File) => {
 
   let uploadedFile;
   try {
-    uploadedFile = await fileUploader.uploadToDigitalOcean(file);
+    // uploadedFile = await fileUploader.uploadToDigitalOcean(file);
+    uploadedFile = await fileUploader.uploadToCloudinary(file);
   } catch (error) {
     console.error("File upload failed:", error);
     throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "File upload failed");

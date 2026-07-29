@@ -16,7 +16,8 @@ const uploadChatImages = catchAsync(async (req: Request, res: Response) => {
     throw new ApiError(httpStatus.BAD_REQUEST, "No images provided");
   }
 
-  const uploadPromises = files.images.map(file => fileUploader.uploadToDigitalOcean(file));
+  // const uploadPromises = files.images.map(file => fileUploader.uploadToDigitalOcean(file));
+  const uploadPromises = files.images.map(file => fileUploader.uploadToCloudinary(file));
   const uploadedImages = await Promise.all(uploadPromises);
 
   const imageUrls = uploadedImages.map(img => img.Location);
