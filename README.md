@@ -1,7 +1,7 @@
 # SmartAutoTech (Backend)
 
 <p align="center">
-  <img src="https://automobile-frontend-six.vercel.app/logo2.png" alt="SmartAutoTech App" width="150" height="150"/>
+  <img src="https://automobile-frontend-six.vercel.app/Logo.png" alt="SmartAutoTech App" width="150" height="150"/>
 </p>
 
 A comprehensive backend system for **SmartAutoTech** - an AI-powered diagnostic and shop management platform. It serves as the core API for a modern SaaS platform where auto shop owners and technicians can manage shop workflows, diagnostic reports, and vehicle records. The system includes robust authentication, role-based access control (Admin, Shop Owner, Technician), subscription management via Stripe, and dynamic data handling.
