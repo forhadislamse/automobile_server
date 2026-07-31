@@ -15,7 +15,7 @@ export const corsOptions = {
     "http://10.0.20.160:3001",
     "http://10.10.13.123:3000",
     "https://automobile-server-orcin.vercel.app/", // Backend's own URL (optional)
-    "https://your-frontend-domain.vercel.app" // <-- ফ্রন্টএন্ডের ভার্সেল লিংকটি এখানে বসান
+    "https://automobile-frontend-six.vercel.app/" // <-- ফ্রন্টএন্ডের ভার্সেল লিংকটি এখানে বসান
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
